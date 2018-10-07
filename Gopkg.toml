@@ -127,3 +127,7 @@ ignored = [
   [[prune.project]]
     name = "github.com/knz/go-libedit"
     unused-packages = false
+
+[[constraint]]
+  name = "github.com/sirupsen/logrus"
+  version = "1.0.3"

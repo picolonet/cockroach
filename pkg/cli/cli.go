@@ -42,7 +42,7 @@ import (
 // Main is the entry point for the cli, with a single line calling it intended
 // to be the body of an action package main `main` func elsewhere. It is
 // abstracted for reuse by duplicated `main` funcs in different distributions.
-func Main() {
+func Main() int {
 	// Seed the math/rand RNG from crypto/rand.
 	rand.Seed(randutil.NewPseudoSeed())
 
@@ -73,7 +73,13 @@ func Main() {
 			errCode = ec.exitCode
 		}
 	}
-	os.Exit(errCode)
+	return errCode
+	//os.Exit(errCode)
+}
+
+func MainWithArgs(args []string) int {
+	os.Args = args
+	return Main()
 }
 
 // commandName computes the name of the command that args would invoke. For
