@@ -1,63 +1,37 @@
 package picolo
 
 import (
-	"cloud.google.com/go/firestore"
-	"context"
 	"github.com/cockroachdb/cockroach/pkg/cli"
+	log2 "github.com/cockroachdb/cockroach/pkg/util/log"
+	"github.com/phayes/freeport"
+	"github.com/satori/go.uuid"
 	log "github.com/sirupsen/logrus"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
 	"net"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync"
 )
 
-const clusterPath = "clusters"
-
-func InitCrdbCluster(node *PicoloNode, crdbInstWaitGroup *sync.WaitGroup) {
-	conn, err := net.Dial("tcp", node.NetworkInfo["publicIp"]+":"+"23")
-	if err != nil {
-		log.Info("Node not publicly visible and cannot be a master")
+func MaybeSpawnShard(node *PicoloNode, crdbInstWaitGroup *sync.WaitGroup) {
+	if isPubliclyReachable(node) {
+		log.Info("Node is publicly reachable. Spawning a new shard")
+	} else {
+		log.Info("Node is not publicly reachable. Not spawning a shard")
 		return
 	}
-
-	log.Infof("Connection to %s successful", conn.RemoteAddr().String())
-
 	crdbInstWaitGroup.Add(1)
-
 	go func() {
 		defer crdbInstWaitGroup.Done()
-		log.Info("Initializing crdb cluster")
+		log.Info("Initializing shard")
 
-		var args []string
-		args = append(args, "cockroach",
-			"init",
-			"--insecure")
-
-		cli.MainWithArgs(args)
-	}()
-}
-
-func SpawnCrdbInst(node *PicoloNode, crdbInstWaitGroup *sync.WaitGroup) {
-	crdbInstWaitGroup.Add(1)
-
-	go func() {
-		defer crdbInstWaitGroup.Done()
-		log.Info("Spawning a crdb instance")
-		// get cluster to join
-		join, err := getClusterToJoin()
-		if err != nil {
-			log.Errorf("Spawning crdb failed: %v", err)
-			return
-		}
-
-		store := filepath.Join(DataDir, node.Id)
-		port := "0"
-		httpPort := "0"
-		advertiseHost := node.NetworkInfo["publicIp"]
-		host := node.NetworkInfo["privateIp"]
-
+		instanceId := uuid.NewV4().String()
+		// get free tcp ports
+		ports := getFreeports(2)
+		port := strconv.Itoa(ports[0])
+		httpPort := strconv.Itoa(ports[1])
+		store := filepath.Join(DataDir, node.Id, instanceId)
+		advertiseHost := node.NetInfo.PublicIp4
 		var args []string
 		args = append(args, "cockroach",
 			"start",
@@ -65,92 +39,122 @@ func SpawnCrdbInst(node *PicoloNode, crdbInstWaitGroup *sync.WaitGroup) {
 			"--port="+port,
 			"--http-port="+httpPort,
 			"--advertise-host="+advertiseHost,
-			"--host="+host,
-			"--join="+join,
 			"--insecure",
 			"--background")
-
 		errCode := cli.MainWithArgs(args)
-
 		if errCode == 0 {
-			log.Info("The walrus flies")
+			log.Info("New shard spawned")
+		} else {
+			log.Error("Spawning shard failed")
+			return
 		}
+
+		// construct crdb inst
+		crdbInst := new(CrdbInst)
+		crdbInst.Id = instanceId
+		crdbInst.ShardId = log2.GetClusterID()
+		crdbInst.NetInfo = node.NetInfo
+		crdbInst.Port = port
+		crdbInst.AdminPort = httpPort
+
+		// construct shard
+		shard := new(Shard)
+		shard.Id = log2.GetClusterID()
+		shard.NodeId = node.Id
+		shard.JoinInfo = []string{advertiseHost + ":" + port}
+		shard.CrdbInsts = []string{instanceId}
+
+		// batch register
+		BatchRegisterShardAndCrdbInst(shard, crdbInst)
 	}()
 }
 
-func getClusterToJoin() (join string, err error) {
-	client, err := FB_APP.Firestore(context.Background())
+func getFreeports(count int) ([]int) {
+	ports, err := freeport.GetFreePorts(count)
 	if err != nil {
-		log.Errorf("Error initializing database client: %v", err)
-		return
+		log.Errorf("Error occured while getting free tcp ports, %v", err)
+		return nil
 	}
-	defer client.Close()
-
-	// get a cluster to join
-	// currently joining the last updated cluster
-	query := client.Collection(clusterPath).OrderBy("updatedAt", firestore.Asc).Limit(1).Documents(context.Background())
-	docs, err := query.GetAll()
-	if err != nil {
-		return "", err
+	if len(ports) != count {
+		log.Errorf("Cannot get %s free tcp ports", count)
+		return nil
 	}
-	// Get the last document.
-	doc := docs[len(docs)-1]
-	data := doc.Data()
-	addrs := data["pubAddrs"]
-	switch t := addrs.(type) {
-	case []interface{}:
-		log.Infof("Cluster join address: %s", t)
-		var sb strings.Builder
-		for _, addr := range t {
-			sb.WriteString(addr.(string))
-			sb.WriteString(",")
-		}
-		join = strings.TrimSuffix(sb.String(), ",")
-	default:
-		log.Error("I don't know about type")
-
-	}
-	return
+	return ports
 }
 
-func AddtoCluster(clusterId string, nodeId string, nodeAddr string) {
-	client, err := FB_APP.Firestore(context.Background())
-	if err != nil {
-		log.Errorf("Error initializing database client: %v", err)
-		return
-	}
-	defer client.Close()
+func SpawnCrdbInst(node *PicoloNode, crdbInstWaitGroup *sync.WaitGroup) {
+	crdbInstWaitGroup.Add(1)
+	go func() {
+		defer crdbInstWaitGroup.Done()
+		log.Info("Spawning a crdb instance")
 
-	nodes := make(map[string]interface{})
-	//check if cluster already exists and get nodes if it does
-	dsnap, err := client.Collection(clusterPath).Doc(clusterId).Get(context.Background())
-	if err != nil {
-		if grpc.Code(err) == codes.NotFound {
-			// do nothing, the cluster doesn't exist
+		// get cluster to join
+		shardInfo, err := GetShardToJoin()
+		if err != nil {
+			log.Errorf("Spawning crdb failed: %v", err)
+			return
+		}
+
+		var join string
+		addrs := shardInfo["JoinInfo"]
+		switch t := addrs.(type) {
+		case []interface{}:
+			log.Infof("Cluster join address: %s", t)
+			var sb strings.Builder
+			for _, addr := range t {
+				sb.WriteString(addr.(string))
+				sb.WriteString(",")
+			}
+			join = strings.TrimSuffix(sb.String(), ",")
+		default:
+			log.Error("I don't know about type")
+		}
+
+		instanceId := uuid.NewV4().String()
+		// get free tcp ports
+		ports := getFreeports(2)
+		port := strconv.Itoa(ports[0])
+		httpPort := strconv.Itoa(ports[1])
+		store := filepath.Join(DataDir, node.Id, instanceId)
+		advertiseHost := node.NetInfo.PublicIp4
+		var args []string
+		args = append(args, "cockroach",
+			"start",
+			"--store="+store,
+			"--port="+port,
+			"--http-port="+httpPort,
+			"--advertise-host="+advertiseHost,
+			"--join="+join,
+			"--insecure",
+			"--background")
+		errCode := cli.MainWithArgs(args)
+		if errCode == 0 {
+			log.Info("The walrus flies")
 		} else {
-			log.Errorf("Error occurred while fetching document: %v", err)
+			log.Error("Spawning crdb instance failed")
 			return
 		}
-	}
-	if dsnap.Exists() {
-		m := dsnap.Data()
-		existingNodes, ok := m["nodes"].(map[string]interface{})
-		if !ok {
-			// Can't assert, handle error.
-			log.Error("type conversion failed")
-			return
-		}
-		nodes = existingNodes
-	}
 
-	nodes[nodeId] = nodeAddr
-	_, err = client.Collection("clusters").Doc(clusterId).Set(context.Background(), map[string]interface{}{
-		"createdAt": firestore.ServerTimestamp,
-		"nodes":     nodes,
-	}, firestore.MergeAll)
+		// register instance with the shard
+		AddToShard(shardInfo, instanceId)
 
+		// register crdb inst
+		crdbInst := new(CrdbInst)
+		crdbInst.Id = instanceId
+		crdbInst.ShardId = shardInfo["Id"].(string)
+		crdbInst.NetInfo = node.NetInfo
+		crdbInst.Port = port
+		crdbInst.AdminPort = httpPort
+		RegisterCrdbInstance(crdbInst)
+	}()
+}
+
+func isPubliclyReachable(node *PicoloNode) bool {
+	conn, err := net.Dial("tcp", node.NetInfo.PublicIp4+":"+"26257")
 	if err != nil {
-		log.Errorf("Error registering node: %v", err)
-		return
+		log.Info("Node not publicly visible and cannot be a master")
+		return false
 	}
+	log.Infof("Connection to %s successful", conn.RemoteAddr().String())
+	return true
 }

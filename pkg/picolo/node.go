@@ -32,7 +32,7 @@ func InitNode() *PicoloNode {
 	//generate random node Id
 	PicNode.Id = generateId()
 	//get node's network info
-	PicNode.NetworkInfo = initNet()
+	PicNode.NetInfo = initNet()
 	//get current cpu load
 	PicNode.Load = getCpuLoad()
 	//get disk stats
@@ -62,7 +62,7 @@ func getMemStats() (totalMem int64, freeMem int64) {
 	return
 }
 
-func initNet() map[string]string {
+func initNet() *NetworkInfo {
 	//get public ip addresses
 	res, err := http.Get(publicIpUrl)
 	if err != nil {
@@ -87,10 +87,10 @@ func initNet() map[string]string {
 	m3, _ := ma.NewMultiaddr("/ip6/::1/tcp/0")
 	log.Infof("Multi addresses: %s, %s, %s: ", m1, m2, m3)
 
-	netMap := make(map[string]string)
-	netMap["publicIp"] = string(publicIp)
-	netMap["privateIp"] = localAddr.IP.String()
-	netMap["ip6"] = m3.String()
+	netMap := new(NetworkInfo)
+	netMap.PublicIp4 = string(publicIp)
+	netMap.PrivateIp4 = localAddr.IP.String()
+	netMap.PublicIp6 = m3.String()
 
 	return netMap
 

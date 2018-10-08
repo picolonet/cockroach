@@ -1271,6 +1271,14 @@
   revision = "b0b1615b78e5ee59739545bb38426383b2cda4c9"
 
 [[projects]]
+  branch = "master"
+  digest = "1:b8117863c3d38bde4e8eca9b6c4124f7f16ce0aa7056ad862b855843e05b9398"
+  name = "github.com/phayes/freeport"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "95f893ade6f232a5f1511d61735d89b1ae2df543"
+
+[[projects]]
   digest = "1:34cd01be69526d7e73fff2eff67d8589b390d5f7dd6e1bf218c15f6f46ddc33a"
   name = "github.com/pierrec/lz4"
   packages = ["."]
@@ -1421,6 +1429,14 @@
   pruneopts = "UT"
   revision = "4a180b209f5f494e5923cfce81ea30ba23915877"
   version = "v2.18.06"
+
+[[projects]]
+  branch = "master"
+  digest = "1:99c6a6dab47067c9b898e8c8b13d130c6ab4ffbcc4b7cc6236c2cd0b1e344f5b"
+  name = "github.com/shirou/w32"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "bb4de0191aa41b5507caa14b0650cdbddcd9280b"
 
 [[projects]]
   digest = "1:5f2aaa360f48d1711795bd88c7e45a38f86cf81e4bc01453d20983baa67e2d51"
@@ -1914,6 +1930,7 @@
     "github.com/opentracing/opentracing-go/log",
     "github.com/openzipkin/zipkin-go-opentracing",
     "github.com/petermattis/goid",
+    "github.com/phayes/freeport",
     "github.com/pkg/errors",
     "github.com/pmezard/go-difflib/difflib",
     "github.com/prometheus/client_golang/prometheus",
