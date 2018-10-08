@@ -763,6 +763,10 @@ func SetClusterID(clusterID string) {
 	logging.clusterID = clusterID
 }
 
+func GetClusterID() string {
+	return logging.clusterID
+}
+
 // setVState sets a consistent state for V logging.
 // l.mu is held.
 func (l *loggingT) setVState(verbosity level, filter []modulePat, setFilter bool) {

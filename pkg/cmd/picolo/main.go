@@ -27,17 +27,15 @@ func main() {
 	picoloNode := picolo.InitNode()
 
 	// register picoloNode with discovery service
-	picolo.Register(picoloNode)
+	picolo.RegisterNode(picoloNode)
 
 	picolo.ThrowFlare(picoloNode)
 
 	// spawn a crdb instance
 	picolo.SpawnCrdbInst(picoloNode, &crdbInstWaitGroup)
 
-	//init crdb cluster
-	picolo.InitCrdbCluster(picoloNode, &crdbInstWaitGroup)
-
-	log.Info("printed")
+	//init a shard
+	picolo.MaybeSpawnShard(picoloNode, &crdbInstWaitGroup)
 
 	crdbInstWaitGroup.Wait()
 }
