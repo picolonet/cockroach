@@ -4,10 +4,9 @@ import (
 	"github.com/cockroachdb/cockroach/pkg/picolo"
 	"github.com/onrik/logrus/filename"
 	log "github.com/sirupsen/logrus"
-	"sync"
 )
 
-var crdbInstWaitGroup sync.WaitGroup // keeps track of running crdb instances
+//var crdbInstWaitGroup sync.WaitGroup // keeps track of running crdb instances
 
 func main() {
 	log.Info("A walrus appears")
@@ -32,10 +31,11 @@ func main() {
 	picolo.ThrowFlare(picoloNode)
 
 	// spawn a crdb instance
-	picolo.SpawnCrdbInst(picoloNode, &crdbInstWaitGroup)
+	picolo.SpawnCrdbInst(picoloNode)
+	//time.Sleep(time.Second * 10)
 
 	//init a shard
-	picolo.MaybeSpawnShard(picoloNode, &crdbInstWaitGroup)
+	picolo.MaybeSpawnShard(picoloNode)
 
-	crdbInstWaitGroup.Wait()
+	//crdbInstWaitGroup.Wait()
 }

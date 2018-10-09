@@ -4,13 +4,13 @@ import (
 	"cloud.google.com/go/firestore"
 	"context"
 	"firebase.google.com/go"
-	"github.com/fatih/structs"
 	"github.com/mitchellh/go-homedir"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/api/option"
 	"google.golang.org/genproto/googleapis/type/latlng"
 	"os"
 	"path/filepath"
+	"time"
 )
 
 const nodesPath = "nodes"
@@ -61,97 +61,72 @@ func RegisterNode(node *PicoloNode) {
 	}
 	defer client.Close()
 
-	nodeMap := structs.Map(node)
-	nodeMap["createdAt"] = firestore.ServerTimestamp
-	nodeMap["updatedAt"] = firestore.ServerTimestamp
-	_, err = client.Collection(nodesPath).Doc(id).Set(context.Background(), nodeMap, firestore.MergeAll)
+	node.CreatedAt = time.Now()
+	node.UpdatedAt = time.Now()
+	_, err = client.Collection(nodesPath).Doc(id).Set(context.Background(), node)
 	if err != nil {
 		log.Fatalf("Error registering node: %v", err)
 	}
 }
 
-func RegisterCrdbInstance(inst *CrdbInst) {
-	id := inst.Id
-	log.Infof("Registering crdb instance %s", id)
+func RegisterCrdbInstanceAndShard(shard *Shard, inst *CrdbInst, newShard bool) {
+	shardId := shard.Id
+	log.Infof("Registering crdb instance %s and adding it to shard %s", inst.Id, shardId)
 
-	client, err := FB_APP.Firestore(context.Background())
-	if err != nil {
-		log.Fatalf("Error initializing database client: %v", err)
-	}
-	defer client.Close()
-
-	instMap := structs.Map(inst)
-	instMap["createdAt"] = firestore.ServerTimestamp
-	instMap["updatedAt"] = firestore.ServerTimestamp
-	_, err = client.Collection(instsPath).Doc(id).Set(context.Background(), instMap, firestore.MergeAll)
-	if err != nil {
-		log.Fatalf("Error registering crdb instance: %v", err)
-	}
-}
-
-func BatchRegisterShardAndCrdbInst(shard *Shard, inst *CrdbInst) {
-	log.Infof("Batch registering shard %s and crdb instance", shard.Id, inst.Id)
-
-	client, err := FB_APP.Firestore(context.Background())
-	if err != nil {
-		log.Fatalf("Error initializing database client: %v", err)
-	}
-	defer client.Close()
-
-	shardMap := structs.Map(shard)
-	shardMap["createdAt"] = firestore.ServerTimestamp
-	shardMap["updatedAt"] = firestore.ServerTimestamp
-	instMap := structs.Map(inst)
-	instMap["createdAt"] = firestore.ServerTimestamp
-	instMap["updatedAt"] = firestore.ServerTimestamp
-
-	batch := client.Batch()
-	batch.Set(client.Collection(shardsPath).Doc(shard.Id), shardMap, firestore.MergeAll)
-	batch.Set(client.Collection(instsPath).Doc(inst.Id), instMap, firestore.MergeAll)
-	_, err = batch.Commit(context.Background())
-	if err != nil {
-		log.Fatalf("Error batch registering shard and inst: %v", err)
-	}
-}
-
-func GetShardToJoin() (map[string]interface{}, error) {
 	client, err := FB_APP.Firestore(context.Background())
 	if err != nil {
 		log.Errorf("Error initializing database client: %v", err)
-		return nil, nil
+	}
+	defer client.Close()
+
+	crdbInsts := shard.CrdbInsts
+	crdbInsts = append(crdbInsts, inst.Id)
+	shard.CrdbInsts = crdbInsts
+	if newShard {
+		shard.CreatedAt = time.Now()
+	}
+	shard.UpdatedAt = time.Now()
+	inst.CreatedAt = time.Now()
+	inst.UpdatedAt = time.Now()
+
+	batch := client.Batch()
+	batch.Set(client.Collection(shardsPath).Doc(shardId), shard)
+	batch.Set(client.Collection(instsPath).Doc(inst.Id), inst)
+	_, err = batch.Commit(context.Background())
+	if err != nil {
+		log.Errorf("Error registering crdb instance and adding it to shard: %v", err)
+	}
+}
+
+func GetShardToJoin() (shard Shard, err error) {
+	client, err := FB_APP.Firestore(context.Background())
+	if err != nil {
+		log.Errorf("Error initializing database client: %v", err)
+		return
 	}
 	defer client.Close()
 
 	// get a cluster to join
 	// currently joining the last updated cluster
-	query := client.Collection(shardsPath).OrderBy("updatedAt", firestore.Asc).Limit(1).Documents(context.Background())
+	query := client.Collection(shardsPath).OrderBy("UpdatedAt", firestore.Asc).Limit(1).Documents(context.Background())
 	docs, err := query.GetAll()
 	if err != nil {
-		return nil, err
+		return
 	}
-	// Get the last document.
-	doc := docs[len(docs)-1]
-	return doc.Data(), nil
+	// get the last document
+	if len(docs) >= 1 {
+		doc := docs[len(docs)-1]
+		if err := doc.DataTo(&shard); err != nil {
+			log.Errorf("Error converting data %v", err)
+		}
+	} else {
+		log.Error("No shard to join")
+	}
+	return
 }
 
-func AddToShard(shardInfo map[string]interface{}, instanceId string) {
-	client, err := FB_APP.Firestore(context.Background())
-	if err != nil {
-		log.Errorf("Error initializing database client: %v", err)
-		return
-	}
-	defer client.Close()
-
-	shardId := shardInfo["Id"].(string)
-	crdbInsts := shardInfo["CrdbInsts"].([]interface{})
-	crdbInsts = append(crdbInsts, instanceId)
-	shardInfo["CrdbInsts"] = crdbInsts
-	shardInfo["updatedAt"] = firestore.ServerTimestamp
-	_, err = client.Collection(shardsPath).Doc(shardId).Set(context.Background(), shardInfo, firestore.MergeAll)
-	if err != nil {
-		log.Errorf("Error adding to shard: %v", err)
-		return
-	}
+func AddShardToNode() {
+	//todo
 }
 
 func ThrowFlare(node *PicoloNode) {

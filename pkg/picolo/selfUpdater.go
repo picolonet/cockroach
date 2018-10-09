@@ -10,7 +10,7 @@ import (
 
 const version = "1.0.4"
 const repo = "picolonet/core"
-const selfUpdateTime = "13:00"
+const selfUpdateTime = "17:16"
 const selfUpdateTimeZone = "America/Los_Angeles"
 
 func update() error {
