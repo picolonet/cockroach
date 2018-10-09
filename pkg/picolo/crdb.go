@@ -10,63 +10,60 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	"sync"
+	"time"
 )
 
-func MaybeSpawnShard(node *PicoloNode, crdbInstWaitGroup *sync.WaitGroup) {
+var anInstancePort string // used for checking telnet, see isPubliclyReachable(arg Type)
+
+func MaybeSpawnShard(node *PicoloNode) {
 	if isPubliclyReachable(node) {
 		log.Info("Node is publicly reachable. Spawning a new shard")
 	} else {
 		log.Info("Node is not publicly reachable. Not spawning a shard")
 		return
 	}
-	crdbInstWaitGroup.Add(1)
-	go func() {
-		defer crdbInstWaitGroup.Done()
-		log.Info("Initializing shard")
+	log.Info("Initializing shard")
 
-		instanceId := uuid.NewV4().String()
-		// get free tcp ports
-		ports := getFreeports(2)
-		port := strconv.Itoa(ports[0])
-		httpPort := strconv.Itoa(ports[1])
-		store := filepath.Join(DataDir, node.Id, instanceId)
-		advertiseHost := node.NetInfo.PublicIp4
-		var args []string
-		args = append(args, "cockroach",
-			"start",
-			"--store="+store,
-			"--port="+port,
-			"--http-port="+httpPort,
-			"--advertise-host="+advertiseHost,
-			"--insecure",
-			"--background")
-		errCode := cli.MainWithArgs(args)
-		if errCode == 0 {
-			log.Info("New shard spawned")
-		} else {
-			log.Error("Spawning shard failed")
-			return
-		}
+	instanceId := uuid.NewV4().String()
+	// get free tcp ports
+	ports := getFreeports(2)
+	port := strconv.Itoa(ports[0])
+	httpPort := strconv.Itoa(ports[1])
+	store := filepath.Join(DataDir, node.Id, instanceId)
+	advertiseHost := node.NetInfo.PublicIp4
+	var args []string
+	args = append(args, "cockroach",
+		"start",
+		"--store="+store,
+		"--port="+port,
+		"--http-port="+httpPort,
+		"--advertise-host="+advertiseHost,
+		"--insecure",
+		"--background")
+	errCode := cli.MainWithArgs(args)
+	if errCode == 0 {
+		log.Info("New shard spawned")
+	} else {
+		log.Error("Spawning shard failed")
+		return
+	}
 
-		// construct crdb inst
-		crdbInst := new(CrdbInst)
-		crdbInst.Id = instanceId
-		crdbInst.ShardId = log2.GetClusterID()
-		crdbInst.NetInfo = node.NetInfo
-		crdbInst.Port = port
-		crdbInst.AdminPort = httpPort
+	// construct crdb inst
+	crdbInst := new(CrdbInst)
+	crdbInst.Id = instanceId
+	crdbInst.ShardId = log2.GetClusterID()
+	crdbInst.NetInfo = node.NetInfo
+	crdbInst.Port = port
+	crdbInst.AdminPort = httpPort
 
-		// construct shard
-		shard := new(Shard)
-		shard.Id = log2.GetClusterID()
-		shard.NodeId = node.Id
-		shard.JoinInfo = []string{advertiseHost + ":" + port}
-		shard.CrdbInsts = []string{instanceId}
+	// construct shard
+	shard := new(Shard)
+	shard.Id = log2.GetClusterID()
+	shard.NodeId = node.Id
+	shard.JoinInfo = []string{advertiseHost + ":" + port}
 
-		// batch register
-		BatchRegisterShardAndCrdbInst(shard, crdbInst)
-	}()
+	// batch register
+	RegisterCrdbInstanceAndShard(shard, crdbInst, true)
 }
 
 func getFreeports(count int) ([]int) {
@@ -82,78 +79,62 @@ func getFreeports(count int) ([]int) {
 	return ports
 }
 
-func SpawnCrdbInst(node *PicoloNode, crdbInstWaitGroup *sync.WaitGroup) {
-	crdbInstWaitGroup.Add(1)
-	go func() {
-		defer crdbInstWaitGroup.Done()
-		log.Info("Spawning a crdb instance")
+func SpawnCrdbInst(node *PicoloNode) {
+	log.Info("Spawning a crdb instance")
 
-		// get cluster to join
-		shardInfo, err := GetShardToJoin()
-		if err != nil {
-			log.Errorf("Spawning crdb failed: %v", err)
-			return
-		}
+	// get cluster to join
+	shardInfo, err := GetShardToJoin()
+	if err != nil {
+		log.Errorf("Spawning crdb failed: %v", err)
+		return
+	}
 
-		var join string
-		addrs := shardInfo["JoinInfo"]
-		switch t := addrs.(type) {
-		case []interface{}:
-			log.Infof("Cluster join address: %s", t)
-			var sb strings.Builder
-			for _, addr := range t {
-				sb.WriteString(addr.(string))
-				sb.WriteString(",")
-			}
-			join = strings.TrimSuffix(sb.String(), ",")
-		default:
-			log.Error("I don't know about type")
-		}
+	join := strings.Join(shardInfo.JoinInfo, ",")
+	log.Infof("Cluster join address: %s", join)
 
-		instanceId := uuid.NewV4().String()
-		// get free tcp ports
-		ports := getFreeports(2)
-		port := strconv.Itoa(ports[0])
-		httpPort := strconv.Itoa(ports[1])
-		store := filepath.Join(DataDir, node.Id, instanceId)
-		advertiseHost := node.NetInfo.PublicIp4
-		var args []string
-		args = append(args, "cockroach",
-			"start",
-			"--store="+store,
-			"--port="+port,
-			"--http-port="+httpPort,
-			"--advertise-host="+advertiseHost,
-			"--join="+join,
-			"--insecure",
-			"--background")
-		errCode := cli.MainWithArgs(args)
-		if errCode == 0 {
-			log.Info("The walrus flies")
-		} else {
-			log.Error("Spawning crdb instance failed")
-			return
-		}
+	instanceId := uuid.NewV4().String()
+	// get free tcp ports
+	ports := getFreeports(2)
+	port := strconv.Itoa(ports[0])
+	httpPort := strconv.Itoa(ports[1])
+	store := filepath.Join(DataDir, node.Id, instanceId)
+	advertiseHost := node.NetInfo.PublicIp4
+	var args []string
+	args = append(args, "cockroach",
+		"start",
+		"--store="+store,
+		"--port="+port,
+		"--http-port="+httpPort,
+		"--advertise-host="+advertiseHost,
+		"--join="+join,
+		"--insecure",
+		"--background")
+	errCode := cli.MainWithArgs(args)
+	if errCode == 0 {
+		log.Info("The walrus flies")
+	} else {
+		log.Error("Spawning crdb instance failed")
+		return
+	}
 
-		// register instance with the shard
-		AddToShard(shardInfo, instanceId)
+	anInstancePort = port
 
-		// register crdb inst
-		crdbInst := new(CrdbInst)
-		crdbInst.Id = instanceId
-		crdbInst.ShardId = shardInfo["Id"].(string)
-		crdbInst.NetInfo = node.NetInfo
-		crdbInst.Port = port
-		crdbInst.AdminPort = httpPort
-		RegisterCrdbInstance(crdbInst)
-	}()
+	// register crdb inst
+	crdbInst := new(CrdbInst)
+	crdbInst.Id = instanceId
+	crdbInst.ShardId = shardInfo.Id
+	crdbInst.NetInfo = node.NetInfo
+	crdbInst.Port = port
+	crdbInst.AdminPort = httpPort
+
+	// batch register
+	RegisterCrdbInstanceAndShard(&shardInfo, crdbInst, false)
 }
 
 func isPubliclyReachable(node *PicoloNode) bool {
-	conn, err := net.Dial("tcp", node.NetInfo.PublicIp4+":"+"26257")
+	conn, err := net.DialTimeout("tcp", node.NetInfo.PublicIp4+":"+anInstancePort, time.Second*3)
 	if err != nil {
-		log.Info("Node not publicly visible and cannot be a master")
-		return false
+		return true //todo change to false also check by deleting shards coll in FS
 	}
 	log.Infof("Connection to %s successful", conn.RemoteAddr().String())
 	return true
