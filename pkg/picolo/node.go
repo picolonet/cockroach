@@ -24,7 +24,7 @@ const publicIpUrl = "https://api.ipify.org"
 
 var PicNode *PicoloNode
 
-func InitNode() *PicoloNode {
+func InitNode() {
 	log.Info("Initializing node")
 	PicNode = new(PicoloNode)
 	// get node name
@@ -39,8 +39,6 @@ func InitNode() *PicoloNode {
 	PicNode.TotalDisk, PicNode.FreeDisk = getDiskStats()
 	//get memory stats
 	PicNode.TotalMemory, PicNode.FreeMem = getMemStats()
-
-	return PicNode
 }
 
 func getName() string {
@@ -138,7 +136,7 @@ func generateId() string {
 // saves keys to the given file with
 // restrictive permissions. The key data is saved hex-encoded.
 func saveKeys(privKey *ecdsa.PrivateKey, pubKey *ecdsa.PublicKey, nodeId string) error {
-	file := filepath.Join(DataDir, keyFile)
+	file := filepath.Join(PicoloDataDir, keyFile)
 	privHex := hex.EncodeToString(marshalPrivkey(privKey))
 	pubHex := hex.EncodeToString(marshalPubkey(pubKey))
 	data := "private key: " + privHex + "\n" + "public key: " + pubHex + "\n" + "nodeId: " + nodeId

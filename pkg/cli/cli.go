@@ -21,6 +21,7 @@ import (
 	"math/rand"
 	"os"
 	"strings"
+	"sync"
 	"text/tabwriter"
 
 	_ "github.com/benesch/cgosymbolizer" // calls runtime.SetCgoTraceback on import
@@ -39,10 +40,41 @@ import (
 	_ "github.com/cockroachdb/cockroach/pkg/workload/tpcc"
 )
 
+func PicoloMain(args []string, wg *sync.WaitGroup) {
+	defer wg.Done()
+	// Seed the math/rand RNG from crypto/rand.
+	rand.Seed(randutil.NewPseudoSeed())
+
+	// Change the logging defaults for the main cockroach binary.
+	// The value is overridden after command-line parsing.
+	if err := flag.Lookup(logflags.LogToStderrName).Value.Set("NONE"); err != nil {
+		panic(err)
+	}
+
+	cmdName := commandName(args[1:])
+
+	log.SetupCrashReporter(
+		context.Background(),
+		cmdName,
+	)
+
+	defer log.RecoverAndReportPanic(context.Background(), &serverCfg.Settings.SV)
+
+	errCode := 0
+	if err := Run(args[1:]); err != nil {
+		fmt.Fprintf(stderr, "Failed running %q\n", cmdName)
+		errCode = 1
+		if ec, ok := errors.Cause(err).(*cliError); ok {
+			errCode = ec.exitCode
+		}
+	}
+	os.Exit(errCode)
+}
+
 // Main is the entry point for the cli, with a single line calling it intended
 // to be the body of an action package main `main` func elsewhere. It is
 // abstracted for reuse by duplicated `main` funcs in different distributions.
-func Main() int {
+func Main() {
 	// Seed the math/rand RNG from crypto/rand.
 	rand.Seed(randutil.NewPseudoSeed())
 
@@ -73,13 +105,7 @@ func Main() int {
 			errCode = ec.exitCode
 		}
 	}
-	return errCode
-	//os.Exit(errCode)
-}
-
-func MainWithArgs(args []string) int {
-	os.Args = args
-	return Main()
+	os.Exit(errCode)
 }
 
 // commandName computes the name of the command that args would invoke. For

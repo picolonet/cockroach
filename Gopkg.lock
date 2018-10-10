@@ -537,14 +537,6 @@
   revision = "600d898af40aa09a7a93ecb9265d87b0504b6f03"
 
 [[projects]]
-  digest = "1:ca82a3b99694824c627573c2a76d0e49719b4a9c02d1d85a2ac91f1c1f52ab9b"
-  name = "github.com/fatih/structs"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "a720dfa8df582c51dee1b36feabb906bde1588bd"
-  version = "v1.0"
-
-[[projects]]
   branch = "master"
   digest = "1:da009be490724f12d2625817b738405854412728031d8997672643e8593791be"
   name = "github.com/getsentry/raven-go"
@@ -1873,7 +1865,6 @@
     "github.com/elastic/gosigar",
     "github.com/elazarl/go-bindata-assetfs",
     "github.com/facebookgo/clock",
-    "github.com/fatih/structs",
     "github.com/getsentry/raven-go",
     "github.com/ghemawat/stream",
     "github.com/go-sql-driver/mysql",

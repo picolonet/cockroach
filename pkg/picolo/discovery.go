@@ -4,12 +4,10 @@ import (
 	"cloud.google.com/go/firestore"
 	"context"
 	"firebase.google.com/go"
-	"github.com/mitchellh/go-homedir"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/api/option"
 	"google.golang.org/genproto/googleapis/type/latlng"
 	"os"
-	"path/filepath"
 	"time"
 )
 
@@ -20,10 +18,9 @@ const flaresPath = "flares"
 const SERVICE_CREDS_FILE_ENV = "SERVICE_CREDS_FILE"
 
 var location = &latlng.LatLng{Latitude: 9, Longitude: 179} // todo change this
-var DataDir = ".picolo"
 var FB_APP *firebase.App
 
-func InitAppWithServiceAccount() *firebase.App {
+func InitAppWithServiceAccount() {
 	data, ok := os.LookupEnv(SERVICE_CREDS_FILE_ENV)
 	if !ok {
 		log.Fatal("SERVICE_CREDS_FILE_ENV is not set")
@@ -32,27 +29,12 @@ func InitAppWithServiceAccount() *firebase.App {
 	app, err := firebase.NewApp(context.Background(), nil, opt)
 	if err != nil {
 		log.Infof("Error initializing app: %v", err)
-		return nil
 	}
 	FB_APP = app
-	return app
 }
 
-func CreateDataDir() {
-	home, err := homedir.Dir()
-	if err != nil {
-		log.Fatalf("Error getting user's home dir %v", err)
-	}
-	DataDir = filepath.Join(home, DataDir)
-	if _, err := os.Stat(DataDir); os.IsNotExist(err) {
-		if err := os.Mkdir(DataDir, 0755); err != nil {
-			log.Fatalf("Error creating data store dir %v", err)
-		}
-	}
-}
-
-func RegisterNode(node *PicoloNode) {
-	id := node.Id
+func RegisterNode() {
+	id := PicNode.Id
 	log.Infof("Registering node %s", id)
 
 	client, err := FB_APP.Firestore(context.Background())
@@ -61,17 +43,17 @@ func RegisterNode(node *PicoloNode) {
 	}
 	defer client.Close()
 
-	node.CreatedAt = time.Now()
-	node.UpdatedAt = time.Now()
-	_, err = client.Collection(nodesPath).Doc(id).Set(context.Background(), node)
+	PicNode.CreatedAt = time.Now()
+	PicNode.UpdatedAt = time.Now()
+	_, err = client.Collection(nodesPath).Doc(id).Set(context.Background(), PicNode)
 	if err != nil {
 		log.Fatalf("Error registering node: %v", err)
 	}
 }
 
-func RegisterCrdbInstanceAndShard(shard *Shard, inst *CrdbInst, newShard bool) {
+func RegisterInstance(shard *Shard, inst *CrdbInst, newShard bool) {
 	shardId := shard.Id
-	log.Infof("Registering crdb instance %s and adding it to shard %s", inst.Id, shardId)
+	log.Infof("Registering crdb instance %s, adding it to shard %s", inst.Id, shardId)
 
 	client, err := FB_APP.Firestore(context.Background())
 	if err != nil {
@@ -79,22 +61,26 @@ func RegisterCrdbInstanceAndShard(shard *Shard, inst *CrdbInst, newShard bool) {
 	}
 	defer client.Close()
 
-	crdbInsts := shard.CrdbInsts
-	crdbInsts = append(crdbInsts, inst.Id)
-	shard.CrdbInsts = crdbInsts
-	if newShard {
+	// add instance to shard
+	shard.CrdbInsts = append(shard.CrdbInsts, inst.Id)
+	// add shard to node
+	batch := client.Batch()
+	if newShard && PicNode != nil {
+		log.Infof("Adding shard %s to node %s", shardId, PicNode.Id)
 		shard.CreatedAt = time.Now()
+		PicNode.Shards = append(PicNode.Shards, shard.Id)
+		PicNode.UpdatedAt = time.Now()
+		batch.Set(client.Collection(nodesPath).Doc(PicNode.Id), PicNode)
 	}
 	shard.UpdatedAt = time.Now()
 	inst.CreatedAt = time.Now()
 	inst.UpdatedAt = time.Now()
 
-	batch := client.Batch()
 	batch.Set(client.Collection(shardsPath).Doc(shardId), shard)
 	batch.Set(client.Collection(instsPath).Doc(inst.Id), inst)
 	_, err = batch.Commit(context.Background())
 	if err != nil {
-		log.Errorf("Error registering crdb instance and adding it to shard: %v", err)
+		log.Errorf("Error registering crdb instance, shard and node: %v", err)
 	}
 }
 
@@ -125,11 +111,7 @@ func GetShardToJoin() (shard Shard, err error) {
 	return
 }
 
-func AddShardToNode() {
-	//todo
-}
-
-func ThrowFlare(node *PicoloNode) {
+func ThrowFlare() {
 	log.Infof("Throwing a flare")
 	client, err := FB_APP.Firestore(context.Background())
 	if err != nil {
@@ -138,9 +120,9 @@ func ThrowFlare(node *PicoloNode) {
 	}
 	defer client.Close()
 
-	_, err = client.Collection(flaresPath).Doc(node.Id).Set(context.Background(), map[string]interface{}{
-		"nodeId":    node.Id,
-		"nodeName":  node.Name,
+	_, err = client.Collection(flaresPath).Doc(PicNode.Id).Set(context.Background(), map[string]interface{}{
+		"nodeId":    PicNode.Id,
+		"nodeName":  PicNode.Name,
 		"lastFired": firestore.ServerTimestamp,
 		"location":  location,
 	}, firestore.MergeAll)
