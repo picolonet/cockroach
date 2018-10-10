@@ -65,7 +65,7 @@ func RegisterInstance(shard *Shard, inst *CrdbInst, newShard bool) {
 	shard.CrdbInsts = append(shard.CrdbInsts, inst.Id)
 	// add shard to node
 	batch := client.Batch()
-	if newShard && PicNode != nil {
+	if newShard {
 		log.Infof("Adding shard %s to node %s", shardId, PicNode.Id)
 		shard.CreatedAt = time.Now()
 		PicNode.Shards = append(PicNode.Shards, shard.Id)
@@ -80,7 +80,7 @@ func RegisterInstance(shard *Shard, inst *CrdbInst, newShard bool) {
 	batch.Set(client.Collection(instsPath).Doc(inst.Id), inst)
 	_, err = batch.Commit(context.Background())
 	if err != nil {
-		log.Errorf("Error registering crdb instance, shard and node: %v", err)
+		log.Errorf("Error registering instance: %v", err)
 	}
 }
 

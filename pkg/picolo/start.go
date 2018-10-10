@@ -6,6 +6,7 @@ import (
 	"github.com/onrik/logrus/filename"
 	log "github.com/sirupsen/logrus"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"sync"
 )
@@ -19,13 +20,23 @@ func Start() {
 	}
 
 	log.Info("A walrus appears")
+	defer log.Info("The walrus flies")
 	log.AddHook(filename.NewHook())
+
 	// create data dir
 	CreateDataDir()
 
 	// self updater auto updates the binary when a new version is available
 	// todo check correctness
-	go ScheduleSelfUpdater()
+	if noFork() {
+		waitGroup.Add(1)
+		go ScheduleSelfUpdater(false)
+	} else {
+		cmd := exec.Command(picoloUpdaterCommandName)
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		cmd.Start()
+	}
 
 	// initialize discovery service
 	InitAppWithServiceAccount()
@@ -58,6 +69,17 @@ func forked() (fork bool) {
 		args = append(args, arg)
 	}
 	os.Args = args
+	return
+}
+
+// check if run in no fork mode. In no fork mode crdb instances are created as goroutines instead of forks
+func noFork() (noFork bool) {
+	for _, arg := range os.Args {
+		if arg == "--nofork" {
+			noFork = true
+			break
+		}
+	}
 	return
 }
 
