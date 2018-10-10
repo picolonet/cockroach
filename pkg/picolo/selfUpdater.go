@@ -9,9 +9,10 @@ import (
 )
 
 const version = "1.0.4"
-const repo = "picolonet/core"
-const selfUpdateTime = "17:16"
+const repo = "picolonet/cockroachdb"
+const selfUpdateTime = "4:18"
 const selfUpdateTimeZone = "America/Los_Angeles"
+const picoloUpdaterCommandName = "picolo-updater"
 
 func update() error {
 	log.Info("Running self update")
@@ -20,7 +21,7 @@ func update() error {
 	log.Infof("Current version is %s", current)
 	latest, err := selfupdate.UpdateSelf(current, repo)
 	if err != nil {
-		log.Infof("Error self updating app: %v", err)
+		log.Errorf("Error self updating app: %v", err)
 		return err
 	}
 
@@ -33,10 +34,14 @@ func update() error {
 	return nil
 }
 
-func ScheduleSelfUpdater() {
+func ScheduleSelfUpdater(cmd bool) {
+	log.Infof("Scheduling self updater")
+	if !cmd {
+		defer waitGroup.Done()
+	}
 	PST, err := time.LoadLocation(selfUpdateTimeZone)
 	if err != nil {
-		log.Info(err)
+		log.Error(err)
 		return
 	}
 	gocron.ChangeLoc(PST)

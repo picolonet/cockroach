@@ -41,6 +41,7 @@ func SpawnCrdbInst() {
 	log.Infof("Cluster join address: %s", join)
 
 	instanceId := uuid.MakeV4().String()
+	log.Infof("Crdb instance id: %s", instanceId)
 	// get free tcp ports
 	ports := getFreeports(2)
 	port := strconv.Itoa(ports[0])
@@ -50,7 +51,7 @@ func SpawnCrdbInst() {
 
 	// construct args and spawn instance
 	var args []string
-	args = append(args,
+	args = append(args, "picolo",
 		"start",
 		"--store="+store,
 		"--port="+port,
@@ -61,8 +62,8 @@ func SpawnCrdbInst() {
 
 	spawn(args)
 
-tryAgain:
 	numTries := 0
+tryAgain:
 	// check if instance is spawned and register it
 	if isPortOpen("127.0.0.1", port) {
 		anInstancePort = port
@@ -88,15 +89,15 @@ tryAgain:
 }
 
 func MaybeSpawnShard() {
-	if isPortOpen(PicNode.NetInfo.PublicIp4, anInstancePort) {
+	if isPortOpen("127.0.0.1", anInstancePort) { // todo change host to PicNode.NetInfo.PublicIp4
 		log.Info("Node is publicly reachable. Spawning a new shard")
 	} else {
 		log.Info("Node is not publicly reachable. Not spawning a shard")
 		return
 	}
-	log.Info("Initializing shard")
 
 	instanceId := uuid.MakeV4().String()
+	log.Infof("Crdb instance id: %s", instanceId)
 	// get free tcp ports
 	ports := getFreeports(2)
 	port := strconv.Itoa(ports[0])
@@ -106,26 +107,38 @@ func MaybeSpawnShard() {
 
 	// construct args and spawn shard in a fork (--fork flag)
 	var args []string
-	args = append(args,
+	args = append(args, "picolo",
 		"start",
 		"--store="+store,
 		"--port="+port,
 		"--http-port="+httpPort,
 		"--advertise-host="+advertiseHost,
-		"--insecure",
-		"--fork")
+		"--insecure")
 
 	spawn(args)
 
 tryAgain:
 	numTries := 0
 	// check if instance is spawned and register it
-	if isPortOpen(PicNode.NetInfo.PublicIp4, port) {
+	if isPortOpen("127.0.0.1", port) {
 		var shardId string
 		if noFork() {
 			shardId = clog.GetClusterId()
 		} else {
 			// read shardId from file
+			// file creation may take time, so retry a few times
+			retries := 0
+		readAgain:
+			if _, err := os.Stat(filepath.Join(store, "CLUSTERID")); os.IsNotExist(err) {
+				retries++
+				log.Warn("CLUSTERID file not created yet. Trying again...")
+				time.Sleep(time.Second * time.Duration(retries))
+				if retries <= 3 {
+					goto readAgain
+				}
+				log.Errorf("Error creating CLUSTERID file, %v", err)
+				return
+			}
 			byteArr, err := ioutil.ReadFile(filepath.Join(store, "CLUSTERID"))
 			if err != nil {
 				log.Errorf("Error reading shard ID from file, %v", err)
@@ -133,6 +146,7 @@ tryAgain:
 			}
 			shardId = string(byteArr)
 		}
+		log.Infof("Shard Id: %s", shardId)
 		// construct crdb inst
 		crdbInst := new(CrdbInst)
 		crdbInst.Id = instanceId
@@ -176,21 +190,10 @@ func getFreeports(count int) ([]int) {
 func isPortOpen(host, port string) bool {
 	conn, err := net.DialTimeout("tcp", host+":"+port, time.Second*3)
 	if err != nil {
-		return true // todo change to false
+		return false
 	}
 	log.Infof("Connection to %s successful", conn.RemoteAddr().String())
 	return true
-}
-
-// check if run in no fork mode. In no fork mode crdb instances are created as goroutines instead of forks
-func noFork() (noFork bool) {
-	for _, arg := range os.Args {
-		if arg == "--nofork" {
-			noFork = true
-			break
-		}
-	}
-	return
 }
 
 func spawn(args []string) {
@@ -199,7 +202,7 @@ func spawn(args []string) {
 		go cli.PicoloMain(args, &waitGroup)
 	} else {
 		args = append(args, "--fork")
-		cmd := exec.Command("picolo", args[:]...)
+		cmd := exec.Command(args[0], args[1:]...)
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 		// Notify to ourselves that we're restarting.

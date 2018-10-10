@@ -634,7 +634,7 @@ If problems persist, please see ` + base.DocsURL("cluster-setup-troubleshooting.
 			var buf bytes.Buffer
 			info := build.GetInfo()
 			tw := tabwriter.NewWriter(&buf, 2, 1, 2, ' ', 0)
-			fmt.Fprintf(tw, "CockroachDB node starting at %s (took %0.1fs)\n", timeutil.Now(), timeutil.Since(tBegin).Seconds())
+			fmt.Fprintf(tw, "Crdb instance starting at %s (took %0.1fs)\n", timeutil.Now(), timeutil.Since(tBegin).Seconds())
 			fmt.Fprintf(tw, "build:\t%s %s @ %s (%s)\n", info.Distribution, info.Tag, info.Time, info.GoVersion)
 			fmt.Fprintf(tw, "webui:\t%s\n", serverCfg.AdminURL())
 			fmt.Fprintf(tw, "sql:\t%s\n", pgURL)
@@ -667,12 +667,12 @@ If problems persist, please see ` + base.DocsURL("cluster-setup-troubleshooting.
 			nodeID := s.NodeID()
 			if initialBoot {
 				if nodeID == server.FirstNodeID {
-					fmt.Fprintf(tw, "status:\tinitialized new cluster\n")
+					fmt.Fprintf(tw, "status:\tinitialized new shard\n")
 				} else {
-					fmt.Fprintf(tw, "status:\tinitialized new node, joined pre-existing cluster\n")
+					fmt.Fprintf(tw, "status:\tinitialized new crdb instance, joined pre-existing shard\n")
 				}
 			} else {
-				fmt.Fprintf(tw, "status:\trestarted pre-existing node\n")
+				fmt.Fprintf(tw, "status:\trestarted pre-existing instance\n")
 			}
 
 			// Remember the cluster ID for log file rotation.
@@ -685,7 +685,7 @@ If problems persist, please see ` + base.DocsURL("cluster-setup-troubleshooting.
 				return err
 			}
 			msg := buf.String()
-			log.Infof(ctx, "node startup completed:\n%s", msg)
+			log.Infof(ctx, "instance startup completed:\n%s", msg)
 			if !startCtx.inBackground && !log.LoggingToStderr(log.Severity_INFO) {
 				fmt.Print(msg)
 			}

@@ -756,7 +756,7 @@ func SetClusterID(clusterID string) {
 	// Picolo uses clusterID for shardId and when it spawns shards in a different process, clusterID needs to be written to a file for easy future reads
 	// create a file called "CLUSTERID" in data dir aka the parent of logs dir
 	dataDir := filepath.Dir(logging.logDir.String())
-	if err:= ioutil.WriteFile(filepath.Join(dataDir, "CLUSTERID"), []byte(clusterID), 0744); err != nil {
+	if err:= ioutil.WriteFile(filepath.Join(dataDir, "CLUSTERID"), []byte(clusterID), 0644); err != nil {
 		logging.outputLogEntry(Severity_ERROR, file, line, fmt.Sprintf("Writing cluster ID: %s to file failed: %v", clusterID, err))
 	}
 
