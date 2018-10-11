@@ -2,17 +2,12 @@
 
 
 [[projects]]
-  digest = "1:fb8f0820fedb56e7930ddb3a50c620d317491a02949ff85770cd2f99cad36e58"
+  digest = "1:257d8e2c9287f4f019bcf07b17160db066cebe2e1d4549a9d825e3083de36c8e"
   name = "cloud.google.com/go"
   packages = [
     "compute/metadata",
-    "firestore",
-    "firestore/apiv1beta1",
     "iam",
     "internal",
-    "internal/atomiccache",
-    "internal/btree",
-    "internal/fields",
     "internal/optional",
     "internal/trace",
     "internal/version",
@@ -21,22 +16,6 @@
   pruneopts = "UT"
   revision = "0fd7230b2a7505833d5f69b75cbd6c9582401479"
   version = "v0.23.0"
-
-[[projects]]
-  digest = "1:883f94ba0f0ab4ebf643a538842b9d444d5c6a52adabaceec9ed5828682eb377"
-  name = "firebase.google.com/go"
-  packages = [
-    ".",
-    "auth",
-    "db",
-    "iid",
-    "internal",
-    "messaging",
-    "storage",
-  ]
-  pruneopts = "UT"
-  revision = "a291d339beb944a2f216732bb910e800291bc371"
-  version = "v3.4.0"
 
 [[projects]]
   digest = "1:d2ccb697dc13c8fbffafa37baae97594d5592ae8f7e113471084137315536e2b"
@@ -698,7 +677,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:a86502893bbbd2d8e4b3a1dba268b9ff2aa8edffe97890e44154c1c531490aa9"
+  digest = "1:6d66e8a865219bc05273b10cfc81fad65f0b9023285c0f2770bd5c3a20d22654"
   name = "github.com/golang/protobuf"
   packages = [
     "jsonpb",
@@ -710,10 +689,8 @@
     "ptypes",
     "ptypes/any",
     "ptypes/duration",
-    "ptypes/empty",
     "ptypes/struct",
     "ptypes/timestamp",
-    "ptypes/wrappers",
   ]
   pruneopts = "UT"
   revision = "b4deda0973fb4c70b50d226b1af49f3da59f5265"
@@ -1423,14 +1400,6 @@
   version = "v2.18.06"
 
 [[projects]]
-  branch = "master"
-  digest = "1:99c6a6dab47067c9b898e8c8b13d130c6ab4ffbcc4b7cc6236c2cd0b1e344f5b"
-  name = "github.com/shirou/w32"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "bb4de0191aa41b5507caa14b0650cdbddcd9280b"
-
-[[projects]]
   digest = "1:5f2aaa360f48d1711795bd88c7e45a38f86cf81e4bc01453d20983baa67e2d51"
   name = "github.com/sirupsen/logrus"
   packages = ["."]
@@ -1517,13 +1486,12 @@
   revision = "f32bc507658e287a69d89e0e1a4d083a01d9da3e"
 
 [[projects]]
-  digest = "1:65f5fbc476a9d309d39358cca18cc8cc60c9a08d1e66f5a8d6dcc9ac3a948d70"
+  digest = "1:f163a34487229f36dfdb298191d8e17c0e3e6a899aa2cddb020f2ac61ca364ab"
   name = "go.opencensus.io"
   packages = [
     "exporter/stackdriver/propagation",
     "internal",
     "internal/tagencoding",
-    "plugin/ocgrpc",
     "plugin/ochttp",
     "plugin/ochttp/propagation/b3",
     "stats",
@@ -1674,27 +1642,24 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:6c737b26289a214cbe0607cfd0b8680089661accd07d0aa4426c0754c1ae15ce"
+  digest = "1:ab94fd374fb8c09f7c04fada3daff1ab4a07e373b81eecf2b4428f191260a969"
   name = "google.golang.org/api"
   packages = [
     "gensupport",
     "googleapi",
     "googleapi/internal/uritemplates",
     "googleapi/transport",
-    "identitytoolkit/v3",
     "internal",
     "iterator",
     "option",
     "storage/v1",
-    "transport",
-    "transport/grpc",
     "transport/http",
   ]
   pruneopts = "UT"
   revision = "9c79deebf7496e355d7e95d82d4af1fe4e769b2f"
 
 [[projects]]
-  digest = "1:3aed0ef9f09da309b563842e8535d4f4be9610cdf2b561a2f0dc38500ba5e0f2"
+  digest = "1:a48f97fb737d5d61cf13e81cfef040942d217d086766b823757d39d4f6a4c547"
   name = "google.golang.org/appengine"
   packages = [
     ".",
@@ -1705,9 +1670,7 @@
     "internal/log",
     "internal/modules",
     "internal/remote_api",
-    "internal/socket",
     "internal/urlfetch",
-    "socket",
     "urlfetch",
   ]
   pruneopts = "UT"
@@ -1716,11 +1679,10 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:3ef99bf24f4439aa9cf7671b4305a4053818e9c2cc3323ef8cb58afd800ab49f"
+  digest = "1:d1b5ce98b26e2d160fbf5457283aad37b83d99af82c1b32f18d530d372c22520"
   name = "google.golang.org/genproto"
   packages = [
     "googleapis/api/annotations",
-    "googleapis/firestore/v1beta1",
     "googleapis/iam/v1",
     "googleapis/rpc/code",
     "googleapis/rpc/status",
@@ -1731,7 +1693,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:be328a908c5e85b10809ab3b1b5a0fe40f66236ad77fbae1a55aec5a8a895b16"
+  digest = "1:d7b518c4058354dc5bb3f1dff2b818c2e173954dc4692735b3d1a764e6ba8328"
   name = "google.golang.org/grpc"
   packages = [
     ".",
@@ -1742,7 +1704,6 @@
     "codes",
     "connectivity",
     "credentials",
-    "credentials/oauth",
     "encoding",
     "encoding/proto",
     "grpclb/grpc_lb_v1/messages",
@@ -1817,10 +1778,13 @@
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
-    "cloud.google.com/go/firestore",
     "cloud.google.com/go/storage",
+<<<<<<< HEAD
     "github.com/Azure/azure-storage-blob-go/azblob",
     "firebase.google.com/go",
+=======
+    "github.com/Azure/azure-storage-blob-go/2017-07-29/azblob",
+>>>>>>> a96c46db2c... Moved discovery service to cloud functions
     "github.com/MichaelTJones/walk",
     "github.com/Pallinder/sillyname-go",
     "github.com/PuerkitoBio/goquery",

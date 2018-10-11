@@ -38,7 +38,7 @@ func SpawnCrdbInst() {
 	}
 
 	join := strings.Join(shardInfo.JoinInfo, ",")
-	log.Infof("Cluster join address: %s", join)
+	log.Infof("Shard address: %s", join)
 
 	instanceId := uuid.MakeV4().String()
 	log.Infof("Crdb instance id: %s", instanceId)
@@ -89,7 +89,7 @@ tryAgain:
 }
 
 func MaybeSpawnShard() {
-	if isPortOpen("127.0.0.1", anInstancePort) { // todo change host to PicNode.NetInfo.PublicIp4
+	if isPortOpen(PicNode.NetInfo.PublicIp4, anInstancePort) {
 		log.Info("Node is publicly reachable. Spawning a new shard")
 	} else {
 		log.Info("Node is not publicly reachable. Not spawning a shard")

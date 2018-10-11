@@ -27,7 +27,6 @@ func Start() {
 	CreateDataDir()
 
 	// self updater auto updates the binary when a new version is available
-	// todo check correctness
 	if noFork() {
 		waitGroup.Add(1)
 		go ScheduleSelfUpdater(false)
@@ -37,9 +36,6 @@ func Start() {
 		cmd.Stderr = os.Stderr
 		cmd.Start()
 	}
-
-	// initialize discovery service
-	InitAppWithServiceAccount()
 
 	// init picoloNode
 	InitNode()
