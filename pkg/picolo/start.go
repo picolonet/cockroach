@@ -14,6 +14,8 @@ import (
 var waitGroup sync.WaitGroup // keeps track of running crdb instances
 var PicoloDataDir = ".picolo"
 
+const updaterCommandName = "picolo-updater"
+
 func Start() {
 	if forked() {
 		cli.Main()
@@ -26,17 +28,17 @@ func Start() {
 	// create data dir
 	CreateDataDir()
 
-	// self updater auto updates the binary when a new version is available
-	if noFork() {
-		waitGroup.Add(1)
-		go ScheduleSelfUpdater(false)
+	// self picolo-updater auto updates the binary when a new version is available
+	_, err := exec.LookPath(updaterCommandName)
+	if err != nil {
+		log.Warn("picolo-updater not found, please install it")
 	} else {
-		cmd := exec.Command(picoloUpdaterCommandName)
+		cmd := exec.Command(updaterCommandName)
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 		cmd.Start()
 	}
-
+	
 	// init picoloNode
 	InitNode()
 

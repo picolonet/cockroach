@@ -1,25 +1,40 @@
-package picolo
+package main
 
 import (
 	"github.com/blang/semver"
 	"github.com/jasonlvhit/gocron"
 	"github.com/rhysd/go-github-selfupdate/selfupdate"
 	log "github.com/sirupsen/logrus"
+	"os/exec"
 	"time"
 )
 
-const version = "1.0.4"
-const repo = "picolonet/cockroachdb"
-const selfUpdateTime = "13:00"
-const selfUpdateTimeZone = "America/Los_Angeles"
-const picoloUpdaterCommandName = "picolo-updater"
+const version = "1.0.0"
+const repo = "picolonet/cockroach"
+const updateTime = "13:00" // 24 hour format
+const updateTimeZone = "America/Los_Angeles"
+const updateeCommandName = "picolo"
+
+func main() {
+	log.Infof("Scheduling self updater")
+	PST, err := time.LoadLocation(updateTimeZone)
+	if err != nil {
+		log.Error(err)
+		return
+	}
+	gocron.ChangeLoc(PST)
+	gocron.Every(1).Day().At(updateTime).Do(update)
+	<-gocron.Start()
+	log.Infof("Self updater exited")
+}
 
 func update() error {
 	log.Info("Running self update")
 	selfupdate.EnableLog()
 	current := semver.MustParse(version)
 	log.Infof("Current version is %s", current)
-	latest, err := selfupdate.UpdateSelf(current, repo)
+	cmdPath, _ := exec.LookPath(updateeCommandName)
+	latest, err := selfupdate.UpdateCommand(cmdPath, current, repo)
 	if err != nil {
 		log.Errorf("Error self updating app: %v", err)
 		return err
@@ -32,19 +47,4 @@ func update() error {
 		log.Infof("Release notes: %s", latest.ReleaseNotes)
 	}
 	return nil
-}
-
-func ScheduleSelfUpdater(cmd bool) {
-	log.Infof("Scheduling self updater")
-	if !cmd {
-		defer waitGroup.Done()
-	}
-	PST, err := time.LoadLocation(selfUpdateTimeZone)
-	if err != nil {
-		log.Error(err)
-		return
-	}
-	gocron.ChangeLoc(PST)
-	gocron.Every(1).Day().At(selfUpdateTime).Do(update)
-	<-gocron.Start()
 }
