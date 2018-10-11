@@ -213,3 +213,14 @@ func spawn(args []string) {
 		}
 	}
 }
+
+// check if run in no fork mode. In no fork mode crdb instances are created as goroutines instead of forks
+func noFork() (noFork bool) {
+	for _, arg := range os.Args {
+		if arg == "--nofork" {
+			noFork = true
+			break
+		}
+	}
+	return
+}
