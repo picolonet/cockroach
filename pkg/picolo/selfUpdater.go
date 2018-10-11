@@ -10,7 +10,7 @@ import (
 
 const version = "1.0.4"
 const repo = "picolonet/cockroachdb"
-const selfUpdateTime = "4:18"
+const selfUpdateTime = "13:00"
 const selfUpdateTimeZone = "America/Los_Angeles"
 const picoloUpdaterCommandName = "picolo-updater"
 
