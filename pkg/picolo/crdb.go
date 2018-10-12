@@ -45,7 +45,7 @@ func SpawnCrdbInst() {
 	ports := getFreeports(2)
 	port := strconv.Itoa(ports[0])
 	httpPort := strconv.Itoa(ports[1])
-	store := filepath.Join(PicoloDataDir, PicNode.Id, instanceId)
+	store := filepath.Join(PicoloDir, instanceId)
 	advertiseHost := PicNode.NetInfo.PublicIp4
 
 	// construct args and spawn instance
@@ -101,7 +101,7 @@ func MaybeSpawnShard() {
 	ports := getFreeports(2)
 	port := strconv.Itoa(ports[0])
 	httpPort := strconv.Itoa(ports[1])
-	store := filepath.Join(PicoloDataDir, PicNode.Id, instanceId)
+	store := filepath.Join(PicoloDir, instanceId)
 	advertiseHost := PicNode.NetInfo.PublicIp4
 
 	// construct args and spawn shard in a fork (--fork flag)
