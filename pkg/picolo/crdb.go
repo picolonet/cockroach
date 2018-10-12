@@ -19,8 +19,7 @@ import (
 
 const PICOLO_BG_RESTART = "PICOLO_BACKGROUND_RESTART"
 
-var DebugMode bool
-var anInstancePort string // used for checking telnet, see isPortOpen(arg Type)
+var anInstancePort string // used for checking telnet, see portOpen(arg Type)
 
 func SpawnCrdbInst() {
 	log.Info("Spawning a crdb instance")
@@ -32,7 +31,7 @@ func SpawnCrdbInst() {
 		return
 	}
 
-	if len(shardInfo.Id) == 0 {
+	if len(shardInfo.Id) == 0 || len(shardInfo.JoinInfo) == 0 {
 		log.Error("Shard info is nil. Not spawning instance")
 		return
 	}
@@ -65,7 +64,7 @@ func SpawnCrdbInst() {
 	numTries := 0
 tryAgain:
 	// check if instance is spawned and register it
-	if isPortOpen("127.0.0.1", port) {
+	if portOpen("127.0.0.1", port) {
 		anInstancePort = port
 		// register crdb inst
 		crdbInst := new(CrdbInst)
@@ -89,7 +88,7 @@ tryAgain:
 }
 
 func MaybeSpawnShard() {
-	if isPortOpen(PicNode.NetInfo.PublicIp4, anInstancePort) {
+	if portOpen(PicNode.NetInfo.PublicIp4, anInstancePort) {
 		log.Info("Node is publicly reachable. Spawning a new shard")
 	} else {
 		log.Info("Node is not publicly reachable. Not spawning a shard")
@@ -120,7 +119,7 @@ func MaybeSpawnShard() {
 tryAgain:
 	numTries := 0
 	// check if instance is spawned and register it
-	if isPortOpen("127.0.0.1", port) {
+	if portOpen("127.0.0.1", port) {
 		var shardId string
 		if noFork() {
 			shardId = clog.GetClusterId()
@@ -187,7 +186,7 @@ func getFreeports(count int) ([]int) {
 	return ports
 }
 
-func isPortOpen(host, port string) bool {
+func portOpen(host, port string) bool {
 	conn, err := net.DialTimeout("tcp", host+":"+port, time.Second*3)
 	if err != nil {
 		return false
