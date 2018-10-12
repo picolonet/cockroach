@@ -17,10 +17,10 @@ import (
 )
 
 var waitGroup sync.WaitGroup // keeps track of running crdb instances
-var PicoloDataDir = ".picolo"
+var PicoloDir = ".picolo"
 
 const NodeInfoFile = "NODEINFO"
-
+const PicoloNodeFile = "PICOLONODE"
 const version = "1.0.0"
 const repo = "picolonet/cockroach"
 const updateTime = "13:00" // 24 hour format
@@ -37,13 +37,10 @@ func Start() {
 	if err != nil {
 		log.Fatalf("Error getting user's home dir %v", err)
 	}
-	PicoloDataDir = filepath.Join(home, PicoloDataDir)
+	PicoloDir = filepath.Join(home, PicoloDir)
 
 	// create data dir
-	CreateDataDir()
-
-	// init PicoloNode
-	InitNode()
+	CreatePicoloDir()
 
 	if fork {
 		go updater()
@@ -51,10 +48,15 @@ func Start() {
 	}
 
 	if !registered() {
+		initNode()
 		// register picoloNode with discovery service
 		RegisterNode()
 		ThrowFlare()
+	} else {
+		log.Info("Node already registered")
 	}
+
+	constructNode()
 
 	// spawn a crdb instance
 	SpawnCrdbInst()
@@ -63,8 +65,8 @@ func Start() {
 	MaybeSpawnShard()
 
 	if running() {
-		if err := ioutil.WriteFile(filepath.Join(PicoloDataDir, "PORT"), []byte(anInstancePort), 0644); err != nil {
-			log.Warnf("Writing open port to file failed, %v", err)
+		if err := ioutil.WriteFile(filepath.Join(PicoloDir, "PORT"), []byte(anInstancePort), 0644); err != nil {
+			log.Warnf("Writing open port number to file failed, %v", err)
 		}
 		log.Info("The walrus flies")
 	}
@@ -74,7 +76,7 @@ func Start() {
 }
 
 func registered() bool {
-	dir := filepath.Join(PicoloDataDir, NodeInfoFile)
+	dir := filepath.Join(PicoloDir, NodeInfoFile)
 	if _, err := os.Stat(dir); err != nil {
 		if os.IsNotExist(err) {
 			return false
@@ -120,9 +122,13 @@ func updater() {
 }
 
 func alreadyRunning() bool {
-	port, err := ioutil.ReadFile(filepath.Join(PicoloDataDir, "PORT"))
+	port, err := ioutil.ReadFile(filepath.Join(PicoloDir, "PORT"))
 	if err != nil {
+		if os.IsNotExist(err) {
+			return false
+		}
 		log.Warnf("Reading open port file failed, %v", err)
+		return false
 	}
 	if portOpen("127.0.0.1", string(port)) {
 		return true
@@ -163,10 +169,10 @@ func forked() (fork bool) {
 	return
 }
 
-func CreateDataDir() {
-	if _, err := os.Stat(PicoloDataDir); err != nil {
+func CreatePicoloDir() {
+	if _, err := os.Stat(PicoloDir); err != nil {
 		if os.IsNotExist(err) {
-			if err := os.Mkdir(PicoloDataDir, 0755); err != nil {
+			if err := os.Mkdir(PicoloDir, 0755); err != nil {
 				log.Fatalf("Error creating data store dir %v", err)
 			}
 		} else {

@@ -7,6 +7,7 @@ import (
 	"google.golang.org/genproto/googleapis/type/latlng"
 	"io/ioutil"
 	"net/http"
+	"path/filepath"
 	"time"
 )
 
@@ -27,10 +28,10 @@ func RegisterNode() {
 		log.Fatalf("Error marshaling json %v", err)
 	}
 	resp, err := http.Post(baseUrl+registerNodePath, "application/json", bytes.NewBuffer(jsonValue))
-	if err != nil {
+	if err != nil || resp.StatusCode != 200 {
 		log.Fatalf("Error registering node: %v", err)
 	}
-	log.Infof("Registered node with response status: %s", resp.Status)
+	log.Infof("Registered node")
 }
 
 func RegisterInstance(shard *Shard, inst *CrdbInst, newShard bool) {
@@ -59,10 +60,19 @@ func RegisterInstance(shard *Shard, inst *CrdbInst, newShard bool) {
 	}
 
 	resp, err := http.Post(baseUrl+registerInstPath, "application/json", bytes.NewBuffer(jsonValue))
-	if err != nil {
+	if err != nil || resp.StatusCode != 200 {
 		log.Fatalf("Error registering instance: %v", err)
 	}
-	log.Infof("Registered instance with response status: %s", resp.Status)
+	log.Infof("Registered instance")
+
+	// write updated picolo node info back to file
+	jsonData, err := json.Marshal(PicNode)
+	if err != nil {
+		log.Fatalf("Error marshaling picolo node %v", err)
+	}
+	if err := ioutil.WriteFile(filepath.Join(PicoloDir, PicoloNodeFile), jsonData, 0644); err != nil {
+		log.Fatalf("Error saving picolo node info %v", err)
+	}
 }
 
 func GetShardToJoin() (shard Shard, err error) {
@@ -101,8 +111,8 @@ func ThrowFlare() {
 	}
 
 	resp, err := http.Post(baseUrl+throwFlarePath, "application/json", bytes.NewBuffer(jsonValue))
-	if err != nil {
+	if err != nil || resp.StatusCode != 200 {
 		log.Errorf("Error throwing flare: %v", err)
 	}
-	log.Infof("Threw a flare with response status: %s, response code: %d", resp.Status, resp.StatusCode)
+	log.Infof("Threw a flare")
 }

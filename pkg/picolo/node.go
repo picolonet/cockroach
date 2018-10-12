@@ -25,10 +25,11 @@ const publicIpUrl = "https://api.ipify.org"
 var PicNode *PicoloNode
 var nodeInfo *NodeInfo
 
-func InitNode() {
+func initNode() {
 	log.Info("Initializing node")
 	PicNode = new(PicoloNode)
-	assignNameAndId()
+	PicNode.Name = sillyname.GenerateStupidName()
+	PicNode.Id = generateId(PicNode.Name)
 	//get node's network info
 	PicNode.NetInfo = initNet()
 	//get current cpu load
@@ -37,23 +38,25 @@ func InitNode() {
 	PicNode.TotalDisk, PicNode.FreeDisk = getDiskStats()
 	//get memory stats
 	PicNode.TotalMemory, PicNode.FreeMem = getMemStats()
+
+	jsonData, err := json.Marshal(PicNode)
+	if err != nil {
+		log.Fatalf("Error marshaling picolo node %v", err)
+	}
+	if err := ioutil.WriteFile(filepath.Join(PicoloDir, PicoloNodeFile), jsonData, 0644); err != nil {
+		log.Fatalf("Error saving picolo node info %v", err)
+	}
 }
 
-func assignNameAndId() {
-	if registered() {
-		node, err := ioutil.ReadFile(filepath.Join(PicoloDataDir, NodeInfoFile))
-		if err != nil {
-			log.Fatalf("Reading node info file failed, %v", err)
-		}
-		err = json.Unmarshal(node, &nodeInfo)
-		if err != nil {
-			log.Fatalf("Unmarshalling node info file failed, %v", err)
-		}
-		PicNode.Id = nodeInfo.id
-		PicNode.Name = nodeInfo.name
-	} else {
-		PicNode.Name = sillyname.GenerateStupidName()
-		PicNode.Id = generateId(PicNode.Name)
+func constructNode() {
+	data, err := ioutil.ReadFile(filepath.Join(PicoloDir, PicoloNodeFile))
+	if err != nil {
+		log.Fatalf("Error reading picolo node info from file: %v", err)
+		return
+	}
+	if err = json.Unmarshal(data, &PicNode); err != nil {
+		log.Fatalf("Error converting data to picolo node %v", err)
+		return
 	}
 }
 
@@ -103,52 +106,26 @@ func initNet() *NetworkInfo {
 	netMap.PublicIp6 = m3.String()
 
 	return netMap
-
-	//get network interfaces
-	/*interfaces, err := net.Interfaces()
-	if err != nil {
-		log.Errorf("Error getting network interfaces: %v", err)
-	}
-	for _, i := range interfaces {
-		interfaceName, err := net.InterfaceByName(i.Name)
-		if err != nil {
-			log.Errorf("Error getting network interface %s: %v", i.Name, err)
-		}
-		addresses, err := interfaceName.Addrs()
-		if err != nil {
-			log.Errorf("Error getting network addresses %v", err)
-		}
-		for _, addr := range addresses {
-			log.Infof("Interface Address is %v", addr.String())
-		}
-	}*/
-
 }
 
 func generateId(nodeName string) string {
 	pubkeyCurve := curve
-
 	privKey := new(ecdsa.PrivateKey)
 	privKey, err := ecdsa.GenerateKey(pubkeyCurve, rand.Reader) // this generates a public & private key pair
-
 	if err != nil {
 		log.Fatalf("Error generating private & public key pair: %v", err)
 	}
-
 	pubKey := privKey.PublicKey
-
 	nodeId := pubKeyToAddress(pubKey)
 	log.Infof("Node Id: %v", nodeId)
-
 	saveNodeInfo(privKey, &pubKey, nodeId, nodeName)
-
 	return nodeId
 }
 
 // saves keys to the given file with
 // restrictive permissions. The key data is saved hex-encoded.
-func saveNodeInfo(privKey *ecdsa.PrivateKey, pubKey *ecdsa.PublicKey, nodeId string, nodeName string) error {
-	file := filepath.Join(PicoloDataDir, NodeInfoFile)
+func saveNodeInfo(privKey *ecdsa.PrivateKey, pubKey *ecdsa.PublicKey, nodeId string, nodeName string) {
+	file := filepath.Join(PicoloDir, NodeInfoFile)
 	privHex := hex.EncodeToString(marshalPrivkey(privKey))
 	pubHex := hex.EncodeToString(marshalPubkey(pubKey))
 	nodeInfo := &NodeInfo{
@@ -161,7 +138,9 @@ func saveNodeInfo(privKey *ecdsa.PrivateKey, pubKey *ecdsa.PublicKey, nodeId str
 	if err != nil {
 		log.Fatalf("Error marshaling node info %v", err)
 	}
-	return ioutil.WriteFile(file, jsonData, 0600)
+	if err := ioutil.WriteFile(file, jsonData, 0644); err != nil {
+		log.Fatalf("Error saving node info %v", err)
+	}
 }
 
 func pubKeyToAddress(pubKey ecdsa.PublicKey) string {
