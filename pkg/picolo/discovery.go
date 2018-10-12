@@ -70,15 +70,18 @@ func GetShardToJoin() (shard Shard, err error) {
 	// get a shard to join
 	resp, err := http.Get(baseUrl + getShardsPath)
 	if err != nil {
-		log.Fatalf("Error getting shard to join: %v", err)
+		log.Errorf("Error getting shard to join: %v", err)
+		return
 	}
 	defer resp.Body.Close()
 	bodyBytes, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		log.Fatalf("Error reading shard response: %v", err)
+		log.Errorf("Error reading shard response: %v", err)
+		return
 	}
-	if err := json.Unmarshal(bodyBytes, &shard); err != nil {
+	if err = json.Unmarshal(bodyBytes, &shard); err != nil {
 		log.Errorf("Error converting data %v", err)
+		return
 	}
 	return
 }
@@ -94,12 +97,12 @@ func ThrowFlare() {
 
 	jsonValue, err := json.Marshal(flare)
 	if err != nil {
-		log.Fatalf("Error marshaling json %v", err)
+		log.Errorf("Error marshaling json %v", err)
 	}
 
 	resp, err := http.Post(baseUrl+throwFlarePath, "application/json", bytes.NewBuffer(jsonValue))
 	if err != nil {
-		log.Fatalf("Error throwing flare: %v", err)
+		log.Errorf("Error throwing flare: %v", err)
 	}
 	log.Infof("Threw a flare with response status: %s, response code: %d", resp.Status, resp.StatusCode)
 }

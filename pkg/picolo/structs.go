@@ -10,6 +10,13 @@ type NetworkInfo struct {
 	PrivateIp4 string
 }
 
+type NodeInfo struct {
+	id         string
+	name       string
+	publicKey  string
+	privateKey string
+}
+
 type PicoloNode struct {
 	Id          string
 	Name        string

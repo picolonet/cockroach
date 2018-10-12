@@ -6,6 +6,7 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"github.com/Pallinder/sillyname-go"
 	ma "github.com/multiformats/go-multiaddr"
@@ -19,18 +20,15 @@ import (
 //Elliptic curve to use
 var curve = elliptic.P256()
 
-const keyFile = "keys"
 const publicIpUrl = "https://api.ipify.org"
 
 var PicNode *PicoloNode
+var nodeInfo *NodeInfo
 
 func InitNode() {
 	log.Info("Initializing node")
 	PicNode = new(PicoloNode)
-	// get node name
-	PicNode.Name = getName()
-	//generate random node Id
-	PicNode.Id = generateId()
+	assignNameAndId()
 	//get node's network info
 	PicNode.NetInfo = initNet()
 	//get current cpu load
@@ -41,8 +39,22 @@ func InitNode() {
 	PicNode.TotalMemory, PicNode.FreeMem = getMemStats()
 }
 
-func getName() string {
-	return sillyname.GenerateStupidName()
+func assignNameAndId() {
+	if registered() {
+		node, err := ioutil.ReadFile(filepath.Join(PicoloDataDir, NodeInfoFile))
+		if err != nil {
+			log.Fatalf("Reading node info file failed, %v", err)
+		}
+		err = json.Unmarshal(node, &nodeInfo)
+		if err != nil {
+			log.Fatalf("Unmarshalling node info file failed, %v", err)
+		}
+		PicNode.Id = nodeInfo.id
+		PicNode.Name = nodeInfo.name
+	} else {
+		PicNode.Name = sillyname.GenerateStupidName()
+		PicNode.Id = generateId(PicNode.Name)
+	}
 }
 
 func getCpuLoad() (load uint8) {
@@ -113,7 +125,7 @@ func initNet() *NetworkInfo {
 
 }
 
-func generateId() string {
+func generateId(nodeName string) string {
 	pubkeyCurve := curve
 
 	privKey := new(ecdsa.PrivateKey)
@@ -128,19 +140,28 @@ func generateId() string {
 	nodeId := pubKeyToAddress(pubKey)
 	log.Infof("Node Id: %v", nodeId)
 
-	saveKeys(privKey, &pubKey, nodeId)
+	saveNodeInfo(privKey, &pubKey, nodeId, nodeName)
 
 	return nodeId
 }
 
 // saves keys to the given file with
 // restrictive permissions. The key data is saved hex-encoded.
-func saveKeys(privKey *ecdsa.PrivateKey, pubKey *ecdsa.PublicKey, nodeId string) error {
-	file := filepath.Join(PicoloDataDir, keyFile)
+func saveNodeInfo(privKey *ecdsa.PrivateKey, pubKey *ecdsa.PublicKey, nodeId string, nodeName string) error {
+	file := filepath.Join(PicoloDataDir, NodeInfoFile)
 	privHex := hex.EncodeToString(marshalPrivkey(privKey))
 	pubHex := hex.EncodeToString(marshalPubkey(pubKey))
-	data := "private key: " + privHex + "\n" + "public key: " + pubHex + "\n" + "nodeId: " + nodeId
-	return ioutil.WriteFile(file, []byte(data), 0600)
+	nodeInfo := &NodeInfo{
+		id:         nodeId,
+		name:       nodeName,
+		privateKey: privHex,
+		publicKey:  pubHex,
+	}
+	jsonData, err := json.Marshal(nodeInfo)
+	if err != nil {
+		log.Fatalf("Error marshaling node info %v", err)
+	}
+	return ioutil.WriteFile(file, jsonData, 0600)
 }
 
 func pubKeyToAddress(pubKey ecdsa.PublicKey) string {
