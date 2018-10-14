@@ -101,9 +101,9 @@ func initNet() *NetworkInfo {
 	log.Infof("Multi addresses: %s, %s, %s: ", m1, m2, m3)
 
 	netMap := new(NetworkInfo)
-	netMap.PublicIp4 = string(publicIp)
-	netMap.PrivateIp4 = localAddr.IP.String()
-	netMap.PublicIp6 = m3.String()
+	netMap.publicIp4 = string(publicIp)
+	netMap.privateIp4 = localAddr.IP.String()
+	netMap.publicIp6 = m3.String()
 
 	return netMap
 }
