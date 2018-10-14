@@ -502,10 +502,11 @@ func runStart(cmd *cobra.Command, args []string) error {
 		}
 
 		if waitForInit {
-			log.Shout(ctx, log.Severity_INFO,
-				"initial startup completed, will now wait for `cockroach init`\n"+
-					"or a join to a running cluster to start accepting clients.\n"+
-					"Check the log file(s) for progress.")
+			// todo picolo temp hack
+			//log.Shout(ctx, log.Severity_INFO,
+			//	"initial startup completed, will now wait for `cockroach init`\n"+
+			//		"or a join to a running cluster to start accepting clients.\n"+
+			//		"Check the log file(s) for progress.")
 		}
 
 		// Ensure the configuration logging is written to disk in case a
@@ -636,9 +637,11 @@ If problems persist, please see ` + base.DocsURL("cluster-setup-troubleshooting.
 			tw := tabwriter.NewWriter(&buf, 2, 1, 2, ' ', 0)
 			fmt.Fprintf(tw, "Crdb instance starting at %s (took %0.1fs)\n", timeutil.Now(), timeutil.Since(tBegin).Seconds())
 			fmt.Fprintf(tw, "build:\t%s %s @ %s (%s)\n", info.Distribution, info.Tag, info.Time, info.GoVersion)
-			fmt.Fprintf(tw, "webui:\t%s\n", serverCfg.AdminURL())
-			fmt.Fprintf(tw, "sql:\t%s\n", pgURL)
-			fmt.Fprintf(tw, "client flags:\t%s\n", clientFlags())
+			//todo picolo temp hack
+			log.Infof(context.Background(), "pgUrl: %s", pgURL)
+			//fmt.Fprintf(tw, "webui:\t%s\n", serverCfg.AdminURL())
+			//fmt.Fprintf(tw, "sql:\t%s\n", pgURL)
+			//fmt.Fprintf(tw, "client flags:\t%s\n", clientFlags())
 			if len(serverCfg.SocketFile) != 0 {
 				fmt.Fprintf(tw, "socket:\t%s\n", serverCfg.SocketFile)
 			}
@@ -678,9 +681,9 @@ If problems persist, please see ` + base.DocsURL("cluster-setup-troubleshooting.
 			// Remember the cluster ID for log file rotation.
 			clusterID := s.ClusterID().String()
 			log.SetClusterID(clusterID)
-			fmt.Fprintf(tw, "clusterID:\t%s\n", clusterID)
-
-			fmt.Fprintf(tw, "nodeID:\t%d\n", nodeID)
+			fmt.Fprintf(tw, "shardID:\t%s\n", clusterID)
+			fmt.Fprintf(tw, "instance number:\t%d\n", nodeID)
+			//fmt.Fprintf(tw, "nodeID:\t%d\n", nodeID)
 			if err := tw.Flush(); err != nil {
 				return err
 			}
@@ -1052,13 +1055,14 @@ func setupAndInitializeLoggingAndProfiling(ctx context.Context) (*stop.Stopper, 
 		if addr == "" {
 			addr = "<all your IP addresses>"
 		}
-		log.Shout(context.Background(), log.Severity_WARNING,
-			"RUNNING IN INSECURE MODE!\n\n"+
-				"- Your cluster is open for any client that can access "+addr+".\n"+
-				"- Any user, even root, can log in without providing a password.\n"+
-				"- Any user, connecting as root, can read or write any data in your cluster.\n"+
-				"- There is no network encryption nor authentication, and thus no confidentiality.\n\n"+
-				"Check out how to secure your cluster: "+base.DocsURL("secure-a-cluster.html"))
+		//todo picolo temp hack to suppress insecure mode warning
+		//log.Shout(context.Background(), log.Severity_WARNING,
+		//	"RUNNING IN INSECURE MODE!\n\n"+
+		//		"- Your cluster is open for any client that can access "+addr+".\n"+
+		//		"- Any user, even root, can log in without providing a password.\n"+
+		//		"- Any user, connecting as root, can read or write any data in your cluster.\n"+
+		//		"- There is no network encryption nor authentication, and thus no confidentiality.\n\n"+
+		//		"Check out how to secure your cluster: "+base.DocsURL("secure-a-cluster.html"))
 	}
 
 	maybeWarnMemorySizes(ctx)
