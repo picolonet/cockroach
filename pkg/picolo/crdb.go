@@ -50,7 +50,7 @@ func SpawnCrdbInst() {
 
 	// construct args and spawn instance
 	var args []string
-	args = append(args, "picolo",
+	args = append(args, os.Args[0],
 		"start",
 		"--store="+store,
 		"--port="+port,
@@ -106,7 +106,7 @@ func MaybeSpawnShard() {
 
 	// construct args and spawn shard in a fork (--fork flag)
 	var args []string
-	args = append(args, "picolo",
+	args = append(args, os.Args[0],
 		"start",
 		"--store="+store,
 		"--port="+port,
