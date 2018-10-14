@@ -5,9 +5,9 @@ import (
 )
 
 type NetworkInfo struct {
-	PublicIp4  string
-	PublicIp6  string
-	PrivateIp4 string
+	publicIp4  string
+	publicIp6  string
+	privateIp4 string
 }
 
 type NodeInfo struct {
@@ -36,6 +36,7 @@ type Shard struct {
 	NodeId    string
 	JoinInfo  []string
 	CrdbInsts []string
+	apps      []string
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
@@ -48,4 +49,12 @@ type CrdbInst struct {
 	ShardId   string
 	CreatedAt time.Time
 	UpdatedAt time.Time
+}
+
+type App struct {
+	id        string
+	name      string
+	shardId   string
+	createdAt time.Time
+	updatedAt time.Time
 }
