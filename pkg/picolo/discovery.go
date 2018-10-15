@@ -22,7 +22,7 @@ var location = &latlng.LatLng{Latitude: 9, Longitude: 179} // todo change this
 
 func RegisterNode() {
 	log.Infof("Registering node %s", PicNode.Id)
-	now := strconv.FormatInt(time.Now().UnixNano() / 1000000, 10)
+	now := strconv.FormatInt(time.Now().UnixNano()/1000000, 10)
 	PicNode.UpdatedAt = now
 	jsonValue, err := json.Marshal(PicNode)
 	if err != nil {
@@ -41,7 +41,7 @@ func RegisterInstance(shard *Shard, inst *CrdbInst, newShard bool) {
 	// add instance to shard
 	shard.CrdbInsts = append(shard.CrdbInsts, inst.Id)
 	// add shard to node
-	now := strconv.FormatInt(time.Now().UnixNano() / 1000000, 10)
+	now := strconv.FormatInt(time.Now().UnixNano()/1000000, 10)
 	if newShard {
 		log.Infof("Adding shard %s to node %s", shard.Id, PicNode.Id)
 		shard.CreatedAt = now
@@ -104,7 +104,7 @@ func ThrowFlare() {
 	flare := make(map[string]interface{})
 	flare["nodeId"] = PicNode.Id
 	flare["nodeName"] = PicNode.Name
-	flare["lastFired"] = strconv.FormatInt(time.Now().UnixNano() / 1000000, 10)
+	flare["lastFired"] = strconv.FormatInt(time.Now().UnixNano()/1000000, 10)
 	flare["location"] = location
 
 	jsonValue, err := json.Marshal(flare)
