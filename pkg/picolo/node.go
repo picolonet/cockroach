@@ -15,6 +15,8 @@ import (
 	"net"
 	"net/http"
 	"path/filepath"
+	"strconv"
+	"time"
 )
 
 //Elliptic curve to use
@@ -23,7 +25,6 @@ var curve = elliptic.P256()
 const publicIpUrl = "https://api.ipify.org"
 
 var PicNode *PicoloNode
-var nodeInfo *NodeInfo
 
 func initNode() {
 	log.Info("Initializing node")
@@ -38,6 +39,8 @@ func initNode() {
 	PicNode.TotalDisk, PicNode.FreeDisk = getDiskStats()
 	//get memory stats
 	PicNode.TotalMemory, PicNode.FreeMem = getMemStats()
+	now := strconv.FormatInt(time.Now().UnixNano() / 1000000, 10)
+	PicNode.CreatedAt = now
 
 	jsonData, err := json.Marshal(PicNode)
 	if err != nil {
@@ -75,7 +78,7 @@ func getMemStats() (totalMem int64, freeMem int64) {
 	return
 }
 
-func initNet() *NetworkInfo {
+func initNet() NetworkInfo {
 	//get public ip addresses
 	res, err := http.Get(publicIpUrl)
 	if err != nil {
@@ -101,11 +104,11 @@ func initNet() *NetworkInfo {
 	log.Infof("Multi addresses: %s, %s, %s: ", m1, m2, m3)
 
 	netMap := new(NetworkInfo)
-	netMap.publicIp4 = string(publicIp)
-	netMap.privateIp4 = localAddr.IP.String()
-	netMap.publicIp6 = m3.String()
+	netMap.PublicIp4 = string(publicIp)
+	netMap.PrivateIp4 = localAddr.IP.String()
+	netMap.PublicIp6 = m3.String()
 
-	return netMap
+	return *netMap
 }
 
 func generateId(nodeName string) string {
@@ -129,10 +132,10 @@ func saveNodeInfo(privKey *ecdsa.PrivateKey, pubKey *ecdsa.PublicKey, nodeId str
 	privHex := hex.EncodeToString(marshalPrivkey(privKey))
 	pubHex := hex.EncodeToString(marshalPubkey(pubKey))
 	nodeInfo := &NodeInfo{
-		id:         nodeId,
-		name:       nodeName,
-		privateKey: privHex,
-		publicKey:  pubHex,
+		Id:         nodeId,
+		Name:       nodeName,
+		PrivateKey: privHex,
+		PublicKey:  pubHex,
 	}
 	jsonData, err := json.Marshal(nodeInfo)
 	if err != nil {

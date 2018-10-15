@@ -46,7 +46,7 @@ func SpawnCrdbInst() {
 	port := strconv.Itoa(ports[0])
 	httpPort := strconv.Itoa(ports[1])
 	store := filepath.Join(PicoloDir, instanceId)
-	advertiseHost := PicNode.NetInfo.publicIp4
+	advertiseHost := PicNode.NetInfo.PublicIp4
 
 	// construct args and spawn instance
 	var args []string
@@ -88,7 +88,7 @@ tryAgain:
 }
 
 func MaybeSpawnShard() {
-	if portOpen(PicNode.NetInfo.publicIp4, anInstancePort) {
+	if portOpen(PicNode.NetInfo.PublicIp4, anInstancePort) {
 		log.Info("Node is publicly reachable. Spawning a new shard")
 	} else {
 		log.Info("Node is not publicly reachable. Not spawning a shard")
@@ -102,7 +102,7 @@ func MaybeSpawnShard() {
 	port := strconv.Itoa(ports[0])
 	httpPort := strconv.Itoa(ports[1])
 	store := filepath.Join(PicoloDir, instanceId)
-	advertiseHost := PicNode.NetInfo.publicIp4
+	advertiseHost := PicNode.NetInfo.PublicIp4
 
 	// construct args and spawn shard in a fork (--fork flag)
 	var args []string

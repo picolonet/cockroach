@@ -1,16 +1,16 @@
 package picolo
 
 type NetworkInfo struct {
-	publicIp4  string
-	publicIp6  string
-	privateIp4 string
+	PublicIp4  string
+	PublicIp6  string
+	PrivateIp4 string
 }
 
 type NodeInfo struct {
-	id         string
-	name       string
-	publicKey  string
-	privateKey string
+	Id         string
+	Name       string
+	PublicKey  string
+	PrivateKey string
 }
 
 type PicoloNode struct {
@@ -22,7 +22,7 @@ type PicoloNode struct {
 	FreeDisk    int64
 	TotalMemory int64
 	FreeMem     int64
-	NetInfo     *NetworkInfo
+	NetInfo     NetworkInfo
 	CreatedAt   string
 	UpdatedAt   string
 }
@@ -40,7 +40,7 @@ type Shard struct {
 type CrdbInst struct {
 	Id        string
 	Port      string
-	NetInfo   *NetworkInfo
+	NetInfo   NetworkInfo
 	AdminPort string
 	ShardId   string
 	CreatedAt string
