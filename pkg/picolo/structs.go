@@ -1,9 +1,5 @@
 package picolo
 
-import (
-	"time"
-)
-
 type NetworkInfo struct {
 	publicIp4  string
 	publicIp6  string
@@ -27,8 +23,8 @@ type PicoloNode struct {
 	TotalMemory int64
 	FreeMem     int64
 	NetInfo     *NetworkInfo
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
+	CreatedAt   string
+	UpdatedAt   string
 }
 
 type Shard struct {
@@ -37,8 +33,8 @@ type Shard struct {
 	JoinInfo  []string
 	CrdbInsts []string
 	apps      []string
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	CreatedAt string
+	UpdatedAt string
 }
 
 type CrdbInst struct {
@@ -47,14 +43,14 @@ type CrdbInst struct {
 	NetInfo   *NetworkInfo
 	AdminPort string
 	ShardId   string
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	CreatedAt string
+	UpdatedAt string
 }
 
 type App struct {
 	id        string
 	name      string
 	shardId   string
-	createdAt time.Time
-	updatedAt time.Time
+	createdAt string
+	updatedAt string
 }

@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"path/filepath"
+	"strconv"
 	"time"
 )
 
@@ -21,8 +22,9 @@ var location = &latlng.LatLng{Latitude: 9, Longitude: 179} // todo change this
 
 func RegisterNode() {
 	log.Infof("Registering node %s", PicNode.Id)
-	PicNode.CreatedAt = time.Now()
-	PicNode.UpdatedAt = time.Now()
+	now := strconv.FormatInt(time.Now().UnixNano() / 1000000, 10)
+	PicNode.CreatedAt = now
+	PicNode.UpdatedAt = now
 	jsonValue, err := json.Marshal(PicNode)
 	if err != nil {
 		log.Fatalf("Error marshaling json %v", err)
@@ -40,16 +42,17 @@ func RegisterInstance(shard *Shard, inst *CrdbInst, newShard bool) {
 	// add instance to shard
 	shard.CrdbInsts = append(shard.CrdbInsts, inst.Id)
 	// add shard to node
+	now := strconv.FormatInt(time.Now().UnixNano() / 1000000, 10)
 	if newShard {
 		log.Infof("Adding shard %s to node %s", shard.Id, PicNode.Id)
-		shard.CreatedAt = time.Now()
+		shard.CreatedAt = now
 		PicNode.Shards = append(PicNode.Shards, shard.Id)
-		PicNode.UpdatedAt = time.Now()
+		PicNode.UpdatedAt = now
 		allMap["node"] = PicNode
 	}
-	shard.UpdatedAt = time.Now()
-	inst.CreatedAt = time.Now()
-	inst.UpdatedAt = time.Now()
+	shard.UpdatedAt = now
+	inst.CreatedAt = now
+	inst.UpdatedAt = now
 
 	allMap["shard"] = shard
 	allMap["instance"] = inst
@@ -102,7 +105,7 @@ func ThrowFlare() {
 	flare := make(map[string]interface{})
 	flare["nodeId"] = PicNode.Id
 	flare["nodeName"] = PicNode.Name
-	flare["lastFired"] = time.Now()
+	flare["lastFired"] = strconv.FormatInt(time.Now().UnixNano() / 1000000, 10)
 	flare["location"] = location
 
 	jsonValue, err := json.Marshal(flare)
