@@ -23,7 +23,6 @@ var location = &latlng.LatLng{Latitude: 9, Longitude: 179} // todo change this
 func RegisterNode() {
 	log.Infof("Registering node %s", PicNode.Id)
 	now := strconv.FormatInt(time.Now().UnixNano() / 1000000, 10)
-	PicNode.CreatedAt = now
 	PicNode.UpdatedAt = now
 	jsonValue, err := json.Marshal(PicNode)
 	if err != nil {

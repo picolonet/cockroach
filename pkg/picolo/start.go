@@ -42,11 +42,6 @@ func Start() {
 	// create data dir
 	CreatePicoloDir()
 
-	if fork {
-		go updater()
-		cli.Main()
-	}
-
 	if !registered() {
 		initNode()
 		// register picoloNode with discovery service
@@ -57,6 +52,11 @@ func Start() {
 	}
 
 	constructNode()
+
+	if fork {
+		go updater()
+		cli.Main()
+	}
 
 	// spawn a crdb instance
 	SpawnCrdbInst()
