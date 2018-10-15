@@ -48,9 +48,10 @@ type CrdbInst struct {
 }
 
 type App struct {
-	id        string
-	name      string
-	shardId   string
-	createdAt string
-	updatedAt string
+	id            string
+	name          string
+	shardId       string
+	createdAt     string
+	updatedAt     string
+	shardJoinInfo [] string
 }
