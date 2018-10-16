@@ -15,7 +15,6 @@ import (
 	"net"
 	"net/http"
 	"path/filepath"
-	"strconv"
 	"time"
 )
 
@@ -39,7 +38,7 @@ func initNode() {
 	PicNode.TotalDisk, PicNode.FreeDisk = getDiskStats()
 	//get memory stats
 	PicNode.TotalMemory, PicNode.FreeMem = getMemStats()
-	now := strconv.FormatInt(time.Now().UnixNano()/1000000, 10)
+	now := time.Now().UnixNano() / 1000000
 	PicNode.CreatedAt = now
 
 	jsonData, err := json.Marshal(PicNode)

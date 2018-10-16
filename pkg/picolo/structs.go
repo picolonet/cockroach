@@ -23,18 +23,20 @@ type PicoloNode struct {
 	TotalMemory int64
 	FreeMem     int64
 	NetInfo     NetworkInfo
-	CreatedAt   string
-	UpdatedAt   string
+	CreatedAt   int64
+	UpdatedAt   int64
 }
 
 type Shard struct {
-	Id        string
-	NodeId    string
-	JoinInfo  []string
-	CrdbInsts []string
-	apps      []string
-	CreatedAt string
-	UpdatedAt string
+	Id            string
+	NodeId        string
+	JoinInfo      []string
+	CrdbInsts     []string
+	Apps          []string
+	CreatedAt     int64
+	UpdatedAt     int64
+	AppsCount     int // updated by a firestore listener
+	CrdbInstCount int // updated by a firestore listener
 }
 
 type CrdbInst struct {
@@ -43,15 +45,15 @@ type CrdbInst struct {
 	NetInfo   NetworkInfo
 	AdminPort string
 	ShardId   string
-	CreatedAt string
-	UpdatedAt string
+	CreatedAt int64
+	UpdatedAt int64
 }
 
 type App struct {
-	id            string
-	name          string
-	shardId       string
-	createdAt     string
-	updatedAt     string
-	shardJoinInfo [] string
+	Id            string
+	Name          string
+	ShardId       string
+	CreatedAt     int64
+	UpdatedAt     int64
+	ShardJoinInfo [] string
 }
