@@ -1,3 +1,5 @@
+## What is Picolo?
+
 Picolo is a database network built for web 3.0. It gives developers a new way of storing data on a decentralized network
 of nodes clost to their users.
 - [Status](#status)
@@ -92,11 +94,8 @@ picolo
 - [Join us on Gitter](https://gitter.im/picolonet/general) - This is the most immediate
   way to connect with Picolo engineers.
 
-- For filing bugs, suggesting improvements, or requesting new features, help us out by
-  [opening an issue](https://github.com/picolonet/cockroach/issues/new).
-
 ## Roadmap
 
-- Replace RAFT consensus with a version tolerant to Byzantine faults
+- Replace RAFT consensus with a version that is tolerant to Byzantine faults
 - Replace network layer with an optimized DHT based layer
 - Replace discovery service with the network layer
