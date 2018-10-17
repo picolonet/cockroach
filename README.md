@@ -74,6 +74,9 @@ Full example is [here](https://github.com/picolonet/picolo-examples/blob/master/
 
 ## Run a node
 
+Picolo is a decentralized network with an open participation model. Anyone can run a node and
+contribute to the capacity of the network.
+
 - Install on linux
 ```
 curl -L https://github.com/picolonet/cockroach/releases/download/1.0.0/picolo-linux-amd64.tar.gz | tar xvz
