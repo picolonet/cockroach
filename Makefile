@@ -680,7 +680,6 @@ build/defs.mk.sig: .ALWAYS_REBUILD
 
 COCKROACH      := ./cockroach$(SUFFIX)
 COCKROACHOSS   := ./cockroachoss$(SUFFIX)
-PICOLOMASTER   := ./picolomaster$(SUFFIX)
 COCKROACHSHORT := ./cockroachshort$(SUFFIX)
 PICOLO := ./picolo$(SUFFIX)
 
@@ -712,7 +711,7 @@ go-targets-ccl := \
 	generate \
 	lint lintshort
 
-go-targets := $(go-targets-ccl) $(COCKROACHOSS) $(PICOLOMASTER) $(PICOLO)
+go-targets := $(go-targets-ccl) $(COCKROACHOSS) $(PICOLO)
 
 .DEFAULT_GOAL := all
 all: build
@@ -729,12 +728,10 @@ $(COCKROACH) go-install generate: pkg/ui/distccl/bindata.go
 $(COCKROACHOSS): BUILDTARGET = ./pkg/cmd/cockroach-oss
 $(COCKROACHOSS): $(C_LIBS_OSS) pkg/ui/distoss/bindata.go
 
-$(PICOLOMASTER): BUILDTARGET = ./pkg/cmd/picolo-master
-$(PICOLOMASTER): $(C_LIBS_OSS) pkg/ui/distoss/bindata.go
+$(PICOLO): BUILDTARGET = ./pkg/cmd/picolo
+$(PICOLO): $(C_LIBS_OSS) pkg/ui/distoss/bindata.go
 
 $(COCKROACHSHORT): BUILDTARGET = ./pkg/cmd/cockroach-short
-
-$(PICOLO): BUILDTARGET = ./pkg/cmd/picolo
 
 $(go-targets-ccl): $(C_LIBS_CCL)
 
@@ -753,7 +750,7 @@ $(go-targets): override LINKFLAGS += \
 # The build.utcTime format must remain in sync with TimeFormat in
 # pkg/build/info.go. It is not installed in tests to avoid busting the cache on
 # every rebuild.
-$(COCKROACH) $(COCKROACHOSS) $(COCKROACHSHORT) $(PICOLOMASTER) $(PICOLO) go-install: override LINKFLAGS += \
+$(COCKROACH) $(COCKROACHOSS) $(COCKROACHSHORT) $(PICOLO) go-install: override LINKFLAGS += \
 	-X "github.com/cockroachdb/cockroach/pkg/build.utcTime=$(shell date -u '+%Y/%m/%d %H:%M:%S')"
 
 SETTINGS_DOC_PAGE := docs/generated/settings/settings.html
@@ -763,7 +760,7 @@ SETTINGS_DOC_PAGE := docs/generated/settings/settings.html
 # dependencies are rebuilt which is useful when switching between
 # normal and race test builds.
 .PHONY: go-install
-$(COCKROACH) $(COCKROACHOSS) $(COCKROACHSHORT) $(PICOLOMASTER) $(PICOLO) go-install:
+$(COCKROACH) $(COCKROACHOSS) $(COCKROACHSHORT) $(PICOLO) go-install:
 	 $(xgo) $(build-mode) -v $(GOFLAGS) -tags '$(TAGS)' -ldflags '$(LINKFLAGS)' $(BUILDTARGET)
 
 # The build targets, in addition to producing a Cockroach binary, silently
@@ -786,7 +783,6 @@ buildshort: ## Build the CockroachDB binary without the admin UI.
 build: $(COCKROACH)
 buildoss: $(COCKROACHOSS)
 buildshort: $(COCKROACHSHORT)
-buildpicolomaster: $(PICOLOMASTER)
 buildpicolo: $(PICOLO)
 build buildoss buildshort: $(DOCGEN_TARGETS)
 build buildshort: $(if $(is-cross-compile),,$(SETTINGS_DOC_PAGE))
