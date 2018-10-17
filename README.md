@@ -1,7 +1,7 @@
 ## What is Picolo?
 
 Picolo is a database network built for web 3.0. It gives developers a new way of storing data on a decentralized network
-of nodes clost to their users.
+of nodes close to their users.
 - [Status](#status)
 - [Quickstart](#quickstart)
 - [Run a node](#run-a-node)
