@@ -82,15 +82,27 @@ contribute to the capacity of the network.
 curl -L https://github.com/picolonet/cockroach/releases/download/1.0.0/picolo-linux-amd64.tar.gz | tar xvz
 sudo cp -i picolo /usr/local/bin
 ```
+
 - Install on mac
 ```
 curl -L https://github.com/picolonet/cockroach/releases/download/1.0.0/picolo-darwin-amd64.tar.gz | tar xvz
 sudo cp -i picolo /usr/local/bin
 ```
-- Run
+
+- Open a shell and run
 ```
 picolo
 ```
+
+- Install on windows
+<aside class="notice">
+ Windows installation has not been tested
+</aside>
+
+- Download [archive](https://github.com/picolonet/cockroach/releases/download/1.0.0/picolo-windows-amd64.tar.gz)
+  - Navigate to the downloaded directory and extract the archive
+  - In command shell, run `.\picolo.exe`
+
 
 ## Need Help?
 
