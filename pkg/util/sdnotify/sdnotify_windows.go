@@ -25,5 +25,5 @@ func ready() error {
 }
 
 func bgExec(*exec.Cmd) error {
-	return errors.New("not implemented")
+	return errors.New("not implemented by Picolo")
 }

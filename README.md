@@ -92,10 +92,9 @@ picolo
 ```
 
 #### On windows
-  > Windows installation has not been tested
   - Download [archive](https://github.com/picolonet/storage/releases/download/1.0.0/picolo-windows-amd64.tar.gz)
   - Navigate to the directory and extract the archive
-  - In command shell, run `.\picolo.exe`
+  - In command shell, run `.\picolo.exe --nofork`
 
 
 ## Need Help?

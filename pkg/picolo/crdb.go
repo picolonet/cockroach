@@ -1,6 +1,7 @@
 package picolo
 
 import (
+	"fmt"
 	"github.com/cockroachdb/cockroach/pkg/cli"
 	clog "github.com/cockroachdb/cockroach/pkg/util/log"
 	"github.com/cockroachdb/cockroach/pkg/util/sdnotify"
@@ -217,6 +218,7 @@ func spawn(args []string) {
 func noFork() bool {
 	for _, arg := range os.Args {
 		if arg == "--nofork" {
+			fmt.Printf("Found --nofork arg, starting goroutine instead of forking\n")
 			return true
 		}
 	}
