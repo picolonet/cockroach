@@ -24,7 +24,7 @@ npm install pg request async
 const pg = require('pg')
 const request = require('request')
 
-request.post('https://picolo.app/create', { json: { name: 'testApp' } },
+request.post('https://us-central1-flares-d1c56.cloudfunctions.net/createApp', { json: { name: 'testApp' } },
     (err, res, body) => {
         console.log(err, body)
     }
@@ -36,7 +36,7 @@ const pg = require('pg')
 const request = require('request')
 
 let pool = new pg.Pool()
-request.get('https://picolo.app/testApp',
+request.get('https://us-central1-flares-d1c56.cloudfunctions.net/getApp/testApp',
     (err, res, body) => {
         console.log(err, body)
         if (!err && res.statusCode == 200) {
